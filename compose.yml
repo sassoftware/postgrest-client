@@ -1,0 +1,39 @@
+# Copyright © 2023, SAS Institute Inc., Cary, NC, USA.  All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+version: '3.8'
+services:
+  client:
+    image: node:20
+    depends_on:
+      - server
+    volumes:
+      - .:/app
+    working_dir: /app
+  server:
+    image: postgrest/postgrest
+    environment:
+      PGRST_DB_URI: postgres://app_user:password@db:5432/app_db
+      PGRST_SERVER_PORT: 9000
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_DB_SCHEMAS: 'api, api2'
+      PGRST_OPENAPI_SERVER_PROXY_URI: http://127.0.0.1:9000
+      PGRST_OPENAPI-MODE: ignore-privileges
+      PGRST_DB_MAX_ROWS: 1000
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres
+    environment:
+      POSTGRES_DB: app_db
+      POSTGRES_USER: app_user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - ./test/environment/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready', '-d', 'app_db']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
