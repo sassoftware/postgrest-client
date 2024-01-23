@@ -13,7 +13,7 @@
 
 The PostgREST Client is a type-safe TypeScript client designed for use with PostgREST. It allows for efficient and straightforward interaction with PostgREST APIs, offering a comprehensive suite of features for various operations.
 
-![demo](./docs/demo.gif)
+![demo](https://github.com/sassoftware/postgrest-client/blob/main/docs/demo.gif)
 
 ### Features
 
