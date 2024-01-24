@@ -63,16 +63,16 @@ The PostgREST Client is a type-safe TypeScript client designed for use with Post
 - 🔳 Resource representation
   - ✅ Singular or plural
   - ⬜ Stripped nulls
-  - ⬜ Scalar function response format
+  - ⬜ Response format
 - ⬜ Options method
-- 🔳 URL grammar
+- ✅ URL grammar
   - ✅ Unicode support
   - ✅ Table / Columns with spaces
-  - ⬜ Reserved characters
+  - ✅ Reserved characters
 
 ### Installation
 
-To get started with the PostgREST Client detailed instructions are available in our [Getting Started Documentation](./docs/getting-started.md).
+To get started with the PostgREST Client detailed instructions are available in our [Getting Started Documentation](https://github.com/sassoftware/postgrest-client/blob/main/docs/getting-started.md).
 
 ### Examples
 
@@ -92,18 +92,18 @@ const pgClient = new PostgrestClient<DB>({ base: '/api' });
 const { rows } = await pgClient.get({ query: pgClient.query('films') });
 ```
 
-For more examples and detailed usage instructions, visit our [Queries Documentation](./docs/queries.md).
+For more examples and detailed usage instructions, visit our [Queries Documentation](https://github.com/sassoftware/postgrest-client/blob/main/docs/queries.md).
 
 ## Contributing
 
-We welcome your contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to submit contributions to this project.
+We welcome your contributions! Please read [CONTRIBUTING.md](https://github.com/sassoftware/postgrest-client/blob/main/CONTRIBUTING.md) for details on how to submit contributions to this project.
 
 ## License
 
-This project is licensed under the [Apache 2.0 License](LICENSE).
+This project is licensed under the [Apache 2.0 License](https://github.com/sassoftware/postgrest-client/blob/main/LICENSE).
 
 ## Additional Resources
 
-- [Getting Started Documentation](./docs/getting-started.md)
-- [Queries Documentation](./docs/queries.md)
+- [Getting Started Documentation](https://github.com/sassoftware/postgrest-client/blob/main/docs/getting-started.md)
+- [Queries Documentation](https://github.com/sassoftware/postgrest-client/blob/main/docs/queries.md)
 - More examples available in TSDocs
