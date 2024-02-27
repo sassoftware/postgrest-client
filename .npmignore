@@ -4,7 +4,7 @@
 !dist
 /coverage
 /test
-vite.config.ts
+vite.config.js
 .vscode
 .prettierignore
 .prettierrc
