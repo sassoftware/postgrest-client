@@ -5,6 +5,7 @@ version: '3.8'
 services:
   client:
     image: node:20
+    user: node
     depends_on:
       - server
     volumes:
