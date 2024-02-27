@@ -11,3 +11,8 @@ vite.config.ts
 .eslintignore
 .eslintrc
 compose.yml
+.github
+.husky
+# docs might be nice to have,
+# but it's large and node_modules size grows very quickly
+docs
