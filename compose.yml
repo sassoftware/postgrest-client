@@ -4,7 +4,7 @@
 version: '3.8'
 services:
   client:
-    image: node:20
+    image: node
     user: node
     depends_on:
       - server

@@ -56,6 +56,9 @@ jobs:
         run: npm run circular-deps
   test:
     runs-on: ubuntu-latest
+    container:
+      image: node
+      options: --user node
     permissions:
       contents: read
       id-token: write
