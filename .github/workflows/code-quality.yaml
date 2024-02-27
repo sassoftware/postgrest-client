@@ -8,9 +8,6 @@ on: pull_request
 jobs:
   prettify-check:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -24,9 +21,6 @@ jobs:
         run: npm run format:check
   lint:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -40,9 +34,6 @@ jobs:
         run: npm run lint
   circular-deps:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -56,12 +47,6 @@ jobs:
         run: npm run circular-deps
   test:
     runs-on: ubuntu-latest
-    container:
-      image: node
-      options: --user node
-    permissions:
-      contents: read
-      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v3
