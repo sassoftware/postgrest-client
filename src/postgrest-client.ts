@@ -379,6 +379,7 @@ export class PostgrestClient<DB extends BaseDB | never> {
 
         return {
           ...response,
+          headers,
           data: response.rows,
           status,
           statusText,
@@ -513,6 +514,7 @@ export class PostgrestClient<DB extends BaseDB | never> {
 
         return {
           ...response,
+          headers,
           data: response.rows,
           status,
           statusText,
