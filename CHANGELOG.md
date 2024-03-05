@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## [v0.6.1](https://github.com/sassoftware/postgrest-client/releases/tag/v0.6.1) - 2024-03-04
+
+- [`351c9d7`](https://github.com/sassoftware/postgrest-client/commit/351c9d7f17a607133e494f6b6bad2dda36f81421) fix: missing headers for some requests (#4)
+
 ## v0.6.0 - 2024-01-12
 
 - fix: projects with moduleResolution: "node" could not find types (#68)
