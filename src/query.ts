@@ -68,11 +68,7 @@ type QueryData<DB extends BaseDB, TableName extends keyof DB> = {
   like: FilterItemTuple<DB, keyof DB, GetMethodColumn<DB, keyof DB>>[];
   ilike: FilterItemTuple<DB, keyof DB, GetMethodColumn<DB, keyof DB>>[];
   in: FilterItemTupleArray<DB, keyof DB, GetMethodColumn<DB, keyof DB>>[];
-  is: [
-    GetMethodColumn<DB, keyof DB>,
-    null | true | false | undefined,
-    IsNegated,
-  ][];
+  is: [GetMethodColumn<DB, keyof DB>, null | true | false, IsNegated][];
   and: [Query<DB, keyof DB>[], IsNegated][];
   or: [Query<DB, keyof DB>[], IsNegated][];
   not: IsNegated;
@@ -504,7 +500,7 @@ export class Query<
    */
   is<Column extends GetMethodColumn<DB, TableName>>(
     column: Column,
-    value: null | true | false | undefined,
+    value: null | true | false,
   ) {
     return this.#clone({
       is: [...this.#props.is, [column, value, this.#props.not]],
