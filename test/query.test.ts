@@ -20,10 +20,16 @@ describe('Query', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     json_column2: any;
   }>;
+  type NullsTable = PostgresTable<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    json_column: any | null;
+    nullable: string | null;
+  }>;
   type DB = {
     test_table: TestTable;
     test_table2: TestTable2;
     json_test_table: JsonTestTable;
+    nulls_table: NullsTable;
   };
 
   it('PostgresTable optional null types in post', () => {
@@ -56,8 +62,8 @@ describe('Query', () => {
 
   describe('horizontal filtering', () => {
     const simpleHorizontalFilters = HORIZONTAL_FILTERS.filter(
-      (filter) => filter !== 'in',
-    ) as Exclude<(typeof HORIZONTAL_FILTERS)[number], 'in'>[];
+      (filter) => filter !== 'in' && filter !== 'is',
+    ) as Exclude<(typeof HORIZONTAL_FILTERS)[number], 'in' | 'is'>[];
     const query = new Query<DB, 'test_table'>({ tableName: 'test_table' });
 
     describe('toObject', () => {
@@ -335,6 +341,29 @@ describe('Query', () => {
         expect(q.toString({ encoded: false })).toBe(
           'id=gt.5&json_column->num_val=gt.1&json_column->>num_val=gt.1&id=lt.15&json_column->val1=in.(val1,val2)',
         );
+      });
+
+      describe('nulls support', () => {
+        const query = new Query<DB, 'nulls_table'>({
+          tableName: 'nulls_table',
+        });
+
+        it('json property', () => {
+          expect(
+            query.is('json_column->val', null).toString({ encoded: false }),
+          ).toBe('json_column->val=is.null');
+        });
+
+        it('json object', () => {
+          expect(
+            query.is('json_column', null).toString({ encoded: false }),
+          ).toBe('json_column=is.null');
+        });
+
+        // @ts-expect-error dissalow null in other filters
+        query.in('nullable', [null]).toString({ encoded: false });
+        // @ts-expect-error dissalow null in other filters
+        query.eq('nullable', null).toString({ encoded: false });
       });
     });
   });

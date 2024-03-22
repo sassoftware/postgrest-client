@@ -68,7 +68,11 @@ type QueryData<DB extends BaseDB, TableName extends keyof DB> = {
   like: FilterItemTuple<DB, keyof DB, GetMethodColumn<DB, keyof DB>>[];
   ilike: FilterItemTuple<DB, keyof DB, GetMethodColumn<DB, keyof DB>>[];
   in: FilterItemTupleArray<DB, keyof DB, GetMethodColumn<DB, keyof DB>>[];
-  is: FilterItemTuple<DB, keyof DB, GetMethodColumn<DB, keyof DB>>[];
+  is: [
+    GetMethodColumn<DB, keyof DB>,
+    null | true | false | undefined,
+    IsNegated,
+  ][];
   and: [Query<DB, keyof DB>[], IsNegated][];
   or: [Query<DB, keyof DB>[], IsNegated][];
   not: IsNegated;
@@ -117,7 +121,7 @@ type HorizontalFilterValue<
   TableName extends keyof DB,
   Column extends GetMethodColumn<DB, TableName>,
 > = Column extends VerticalColumnFilter<DB, TableName>
-  ? DB[TableName]['get'][Column]
+  ? NonNullable<DB[TableName]['get'][Column]>
   : Column extends CompositeStringFilter<DB, TableName>
     ? string
     : Column extends CompositeColumnFilter<DB, TableName>
@@ -500,7 +504,7 @@ export class Query<
    */
   is<Column extends GetMethodColumn<DB, TableName>>(
     column: Column,
-    value: HorizontalFilterValue<DB, TableName, Column>,
+    value: null | true | false | undefined,
   ) {
     return this.#clone({
       is: [...this.#props.is, [column, value, this.#props.not]],
@@ -776,9 +780,7 @@ export class Query<
         entries.push({
           column,
           filterKey,
-          filter: Array.isArray(filter)
-            ? filter.map((f) => f.toString())
-            : filter.toString(),
+          filter: Array.isArray(filter) ? filter.map(String) : String(filter),
           not,
         });
       });
