@@ -142,7 +142,9 @@ export type VerticalColumnFilter<
 export type CompositeFilter<
   DB extends BaseDB,
   TableName extends keyof DB,
-> = `${Extract<keyof DB[TableName]['get'], string>}->${Character}${string}`;
+> = `${Extract<keyof DB[TableName]['get'], string>}->${
+  | Character
+  | Capitalize<Character>}${string}`;
 export type CompositeFilterWithModifier<
   DB extends BaseDB,
   TableName extends keyof DB,
