@@ -106,7 +106,7 @@ export type Headers = {
 
 export type HeaderModifiers = Pick<Headers, 'count' | 'returning'>;
 
-type Character =
+type Letter =
   | 'a'
   | 'b'
   | 'c'
@@ -143,8 +143,8 @@ export type CompositeFilter<
   DB extends BaseDB,
   TableName extends keyof DB,
 > = `${Extract<keyof DB[TableName]['get'], string>}->${
-  | Character
-  | Capitalize<Character>}${string}`;
+  | Letter
+  | Capitalize<Letter>}${string}`;
 export type CompositeFilterWithModifier<
   DB extends BaseDB,
   TableName extends keyof DB,
