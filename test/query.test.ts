@@ -303,6 +303,9 @@ describe('Query', () => {
         expect(
           query[method]('json_column2->val', 1).toString({ encoded: false }),
         ).toBe(`json_column2->val=${method}.1`);
+        expect(
+          query[method]('json_column2->VAL', 1).toString({ encoded: false }),
+        ).toBe(`json_column2->VAL=${method}.1`);
 
         expect(
           query[method]('json_column->val1', 1)
