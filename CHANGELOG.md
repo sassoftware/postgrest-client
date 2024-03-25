@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## [v0.6.2](https://github.com/sassoftware/postgrest-client/releases/tag/v0.6.2) - 2024-03-25
+
+- [`4683124`](https://github.com/sassoftware/postgrest-client/commit/4683124a2e35f8af32b8fbacc3573dd31fa1bb65) fix: allow capital letters in json selectors (#9)
+- [`0bd4877`](https://github.com/sassoftware/postgrest-client/commit/0bd4877f157aa0662a7a1db40ee66e27b3e1fabf) fix: support for null in horizontal filtering (#10)
+
 ## [v0.6.1](https://github.com/sassoftware/postgrest-client/releases/tag/v0.6.1) - 2024-03-04
 
 - [`351c9d7`](https://github.com/sassoftware/postgrest-client/commit/351c9d7f17a607133e494f6b6bad2dda36f81421) fix: missing headers for some requests (#4)

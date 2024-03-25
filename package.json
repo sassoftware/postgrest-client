@@ -2,7 +2,7 @@
   "name": "@sassoftware/postgrest-client",
   "description": "Type-safe PostgREST client",
   "license": "Apache-2.0",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "homepage": "https://github.com/sassoftware/postgrest-client#readme",
   "repository": {
     "type": "git",
