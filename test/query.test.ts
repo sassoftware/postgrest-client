@@ -1383,9 +1383,8 @@ describe('Query', () => {
         );
       });
 
-      it.todo('top level filtering (!inner)', () => {
-        // TODO: needs a way to tell it to do top level filtering
-        const query = q1.select(['*', q2.select('*').eq('id', 1)]);
+      it('top level filtering (!inner)', () => {
+        const query = q1.select(['*', q2.select('*').eq('id', 1).inner()]);
         expect(query.toObject()).toMatchObject({
           tableName: 'test_table',
           select: ['*', { tableName: 'test_table2', eq: [['id', 1, false]] }],
