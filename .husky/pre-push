@@ -1,9 +1,6 @@
 # Copyright © 2023, SAS Institute Inc., Cary, NC, USA.  All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 git diff HEAD --quiet || {
     if [ $? -eq '1' ]; then
         echo -e "You have uncommitted changes.\nEither commit or stash them before pushing again.";
