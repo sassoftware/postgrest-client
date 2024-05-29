@@ -292,18 +292,19 @@ type VerticalColumnFilterWithModifiersReturn<
   TableName extends keyof DB,
   R extends object | '*' | null,
   Selector,
-> = Selector extends VerticalColumnFilterWithModifier<DB, TableName>
-  ? R extends '*'
-    ? DB[TableName]['get'] &
-        Rename<DB[TableName]['get'], Selector[0], Selector[1]> &
-        Cast<DB[TableName]['get'], Selector[0], Selector[1]>
-    : R extends null
-      ? Rename<DB[TableName]['get'], Selector[0], Selector[1]> &
-          Cast<DB[TableName]['get'], Selector[0], Selector[1]>
-      : R &
+> =
+  Selector extends VerticalColumnFilterWithModifier<DB, TableName>
+    ? R extends '*'
+      ? DB[TableName]['get'] &
           Rename<DB[TableName]['get'], Selector[0], Selector[1]> &
           Cast<DB[TableName]['get'], Selector[0], Selector[1]>
-  : never;
+      : R extends null
+        ? Rename<DB[TableName]['get'], Selector[0], Selector[1]> &
+            Cast<DB[TableName]['get'], Selector[0], Selector[1]>
+        : R &
+            Rename<DB[TableName]['get'], Selector[0], Selector[1]> &
+            Cast<DB[TableName]['get'], Selector[0], Selector[1]>
+    : never;
 
 /**
  * Takes current response and selector and transforms the response type
@@ -315,13 +316,14 @@ type VerticalColumnFilterReturn<
   TableName extends keyof DB,
   R extends object | '*' | null,
   Selector,
-> = Selector extends VerticalColumnFilter<DB, TableName>
-  ? R extends '*'
-    ? '*'
-    : R extends null
-      ? Pick<DB[TableName]['get'], Selector>
-      : R & Pick<DB[TableName]['get'], Selector>
-  : never;
+> =
+  Selector extends VerticalColumnFilter<DB, TableName>
+    ? R extends '*'
+      ? '*'
+      : R extends null
+        ? Pick<DB[TableName]['get'], Selector>
+        : R & Pick<DB[TableName]['get'], Selector>
+    : never;
 
 type SubQueryReturn<
   DB extends BaseDB,
@@ -344,45 +346,47 @@ type VerticalEmbeddedFilterReturn<
   TableName extends keyof DB,
   R extends object | '*' | null,
   Selector,
+> =
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-> = Selector extends Query<DB, infer TN, infer C, infer RS, infer _H, infer M>
-  ? R extends null
-    ? SubQueryReturn<DB, TN, C, RS, M>
-    : R extends '*'
-      ? DB[TableName]['get'] & SubQueryReturn<DB, TN, C, RS, M>
-      : R & SubQueryReturn<DB, TN, C, RS, M>
-  : never;
+  Selector extends Query<DB, infer TN, infer C, infer RS, infer _H, infer M>
+    ? R extends null
+      ? SubQueryReturn<DB, TN, C, RS, M>
+      : R extends '*'
+        ? DB[TableName]['get'] & SubQueryReturn<DB, TN, C, RS, M>
+        : R & SubQueryReturn<DB, TN, C, RS, M>
+    : never;
 
 type VerticalEmbeddedFilterWithModifierReturn<
   DB extends BaseDB,
   TableName extends keyof DB,
   R extends object | '*' | null,
   Selector,
-> = Selector extends VerticalEmbeddedFilterWithModifier<DB>
-  ? Selector[0] extends Query<
-      DB,
-      infer TN,
-      infer C,
-      infer RS,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      infer _H,
-      infer M
-    >
-    ? R extends null
-      ? TN extends keyof SubQueryReturn<DB, TN, C, RS, M>
-        ? Rename<SubQueryReturn<DB, TN, C, RS, M>, TN, Selector[1]>
-        : object
-      : R extends '*'
-        ? DB[TableName]['get'] &
-            (TN extends keyof SubQueryReturn<DB, TN, C, RS, M>
-              ? Rename<SubQueryReturn<DB, TN, C, RS, M>, TN, Selector[1]>
-              : object)
-        : R &
-            (TN extends keyof SubQueryReturn<DB, TN, C, RS, M>
-              ? Rename<SubQueryReturn<DB, TN, C, RS, M>, TN, Selector[1]>
-              : object)
-    : never
-  : never;
+> =
+  Selector extends VerticalEmbeddedFilterWithModifier<DB>
+    ? Selector[0] extends Query<
+        DB,
+        infer TN,
+        infer C,
+        infer RS,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        infer _H,
+        infer M
+      >
+      ? R extends null
+        ? TN extends keyof SubQueryReturn<DB, TN, C, RS, M>
+          ? Rename<SubQueryReturn<DB, TN, C, RS, M>, TN, Selector[1]>
+          : object
+        : R extends '*'
+          ? DB[TableName]['get'] &
+              (TN extends keyof SubQueryReturn<DB, TN, C, RS, M>
+                ? Rename<SubQueryReturn<DB, TN, C, RS, M>, TN, Selector[1]>
+                : object)
+          : R &
+              (TN extends keyof SubQueryReturn<DB, TN, C, RS, M>
+                ? Rename<SubQueryReturn<DB, TN, C, RS, M>, TN, Selector[1]>
+                : object)
+      : never
+    : never;
 
 type E<T> = T extends `${string}->>${infer Col}` ? Col : never;
 
@@ -391,31 +395,37 @@ type CompositeStringFilterReturn<
   TableName extends keyof DB,
   R extends object | '*' | null,
   Selector,
-> = E<Selector> extends never
-  ? never
-  : R extends '*'
-    ? DB[TableName]['get'] & { [P in E<Selector>]: string }
-    : R extends null
-      ? { [P in E<Selector>]: string }
-      : R & { [P in E<Selector>]: string };
+> =
+  E<Selector> extends never
+    ? never
+    : R extends '*'
+      ? DB[TableName]['get'] & { [P in E<Selector>]: string }
+      : R extends null
+        ? { [P in E<Selector>]: string }
+        : R & { [P in E<Selector>]: string };
 
 type CompositeStringFilterWithModifierReturn<
   DB extends BaseDB,
   TableName extends keyof DB,
   R extends object | '*' | null,
   Selector,
-> = Selector extends CompositeStringFilterWithModifier<DB, TableName>
-  ? R extends '*'
-    ? Rename<
-        DB[TableName]['get'] & { [P in E<Selector[0]>]: string },
-        E<Selector[0]>,
-        Selector[1]
-      >
-    : R extends null
-      ? Rename<{ [P in E<Selector[0]>]: string }, E<Selector[0]>, Selector[1]>
-      : R &
-          Rename<{ [P in E<Selector[0]>]: string }, E<Selector[0]>, Selector[1]>
-  : never;
+> =
+  Selector extends CompositeStringFilterWithModifier<DB, TableName>
+    ? R extends '*'
+      ? Rename<
+          DB[TableName]['get'] & { [P in E<Selector[0]>]: string },
+          E<Selector[0]>,
+          Selector[1]
+        >
+      : R extends null
+        ? Rename<{ [P in E<Selector[0]>]: string }, E<Selector[0]>, Selector[1]>
+        : R &
+            Rename<
+              { [P in E<Selector[0]>]: string },
+              E<Selector[0]>,
+              Selector[1]
+            >
+    : never;
 
 /**
  * Takes Query generics (variables), as well as selectors, and transforms them
@@ -504,102 +514,77 @@ export type VerticalJsonFilterReturn<
   H
 >;
 
-export type CountMetadata<Method extends HttpMethod, Q> = Q extends Query<
-  any,
-  any,
-  any,
-  any,
-  infer H
->
-  ? H['count'] extends NonNullable<H['count']>
-    ? Method extends 'GET' | 'HEAD'
-      ? { pagesLength: number; totalLength: number }
-      : { totalLength: number }
-    : object
-  : object;
+export type CountMetadata<Method extends HttpMethod, Q> =
+  Q extends Query<any, any, any, any, infer H>
+    ? H['count'] extends NonNullable<H['count']>
+      ? Method extends 'GET' | 'HEAD'
+        ? { pagesLength: number; totalLength: number }
+        : { totalLength: number }
+      : object
+    : object;
 
 /**
  * Utility type to transform Query into a result.
  * It should return different types based on Query generics.
  */
-export type GetQueryToResponse<Q> = Q extends Query<any, any, infer C>
-  ? C extends 'one'
-    ? { row: RowType<Q> }
-    : { rows: RowType<Q>[] } & CountMetadata<'GET', Q>
-  : never;
+export type GetQueryToResponse<Q> =
+  Q extends Query<any, any, infer C>
+    ? C extends 'one'
+      ? { row: RowType<Q> }
+      : { rows: RowType<Q>[] } & CountMetadata<'GET', Q>
+    : never;
 
-export type PostRequestData<Q> = Q extends Query<infer DB, infer TN>
-  ? DB[TN]['post'] | DB[TN]['post'][]
-  : never;
+export type PostRequestData<Q> =
+  Q extends Query<infer DB, infer TN>
+    ? DB[TN]['post'] | DB[TN]['post'][]
+    : never;
 
-export type PatchRequestData<Q> = Q extends Query<infer DB, infer TN>
-  ? DB[TN]['patch']
-  : never;
+export type PatchRequestData<Q> =
+  Q extends Query<infer DB, infer TN> ? DB[TN]['patch'] : never;
 
-export type PutRequestData<Q> = Q extends Query<infer DB, infer TN>
-  ? DB[TN]['put']
-  : never;
+export type PutRequestData<Q> =
+  Q extends Query<infer DB, infer TN> ? DB[TN]['put'] : never;
 
-export type PostQueryToResponse<Q> = Q extends Query<
-  any,
-  any,
-  infer C,
-  any,
-  infer H
->
-  ? H['returning'] extends 'headers-only'
-    ? { location: string } & CountMetadata<'POST', Q>
-    : H['returning'] extends 'representation'
-      ? C extends 'one'
-        ? { row: RowType<Q> } & CountMetadata<'POST', Q>
-        : { rows: RowType<Q>[] } & CountMetadata<'POST', Q>
-      : CountMetadata<'POST', Q>
-  : never;
+export type PostQueryToResponse<Q> =
+  Q extends Query<any, any, infer C, any, infer H>
+    ? H['returning'] extends 'headers-only'
+      ? { location: string } & CountMetadata<'POST', Q>
+      : H['returning'] extends 'representation'
+        ? C extends 'one'
+          ? { row: RowType<Q> } & CountMetadata<'POST', Q>
+          : { rows: RowType<Q>[] } & CountMetadata<'POST', Q>
+        : CountMetadata<'POST', Q>
+    : never;
 
-export type PatchQueryToResponse<Q> = Q extends Query<
-  any,
-  any,
-  infer C,
-  any,
-  infer H
->
-  ? H['returning'] extends 'headers-only'
-    ? CountMetadata<'PATCH', Q>
-    : H['returning'] extends 'representation'
-      ? C extends 'one'
-        ? { row: RowType<Q> } & CountMetadata<'PATCH', Q>
-        : { rows: RowType<Q>[] } & CountMetadata<'PATCH', Q>
-      : CountMetadata<'PATCH', Q>
-  : never;
+export type PatchQueryToResponse<Q> =
+  Q extends Query<any, any, infer C, any, infer H>
+    ? H['returning'] extends 'headers-only'
+      ? CountMetadata<'PATCH', Q>
+      : H['returning'] extends 'representation'
+        ? C extends 'one'
+          ? { row: RowType<Q> } & CountMetadata<'PATCH', Q>
+          : { rows: RowType<Q>[] } & CountMetadata<'PATCH', Q>
+        : CountMetadata<'PATCH', Q>
+    : never;
 
-export type PutQueryToResponse<Q> = Q extends Query<
-  any,
-  any,
-  infer C,
-  any,
-  infer H
->
-  ? H['returning'] extends 'headers-only'
-    ? object
-    : H['returning'] extends 'representation'
-      ? C extends 'one'
-        ? { row: RowType<Q> }
-        : { rows: RowType<Q>[] }
-      : object
-  : never;
+export type PutQueryToResponse<Q> =
+  Q extends Query<any, any, infer C, any, infer H>
+    ? H['returning'] extends 'headers-only'
+      ? object
+      : H['returning'] extends 'representation'
+        ? C extends 'one'
+          ? { row: RowType<Q> }
+          : { rows: RowType<Q>[] }
+        : object
+    : never;
 
-export type DeleteQueryToResponse<Q> = Q extends Query<
-  any,
-  any,
-  infer C,
-  any,
-  infer H
->
-  ? H['returning'] extends 'headers-only'
-    ? CountMetadata<'DELETE', Q>
-    : H['returning'] extends 'representation'
-      ? C extends 'one'
-        ? { row: RowType<Q> } & CountMetadata<'DELETE', Q>
-        : { rows: RowType<Q>[] } & CountMetadata<'DELETE', Q>
-      : CountMetadata<'DELETE', Q>
-  : never;
+export type DeleteQueryToResponse<Q> =
+  Q extends Query<any, any, infer C, any, infer H>
+    ? H['returning'] extends 'headers-only'
+      ? CountMetadata<'DELETE', Q>
+      : H['returning'] extends 'representation'
+        ? C extends 'one'
+          ? { row: RowType<Q> } & CountMetadata<'DELETE', Q>
+          : { rows: RowType<Q>[] } & CountMetadata<'DELETE', Q>
+        : CountMetadata<'DELETE', Q>
+    : never;
