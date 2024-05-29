@@ -1446,11 +1446,9 @@ describe('Query', () => {
         // @ts-expect-error invalid select
         query.select('invalid->json_property1');
 
-        const qIdAndFullJson = query
-          .select('id')
-          .selectJson<{ json_column: { json_property1: string } }>(
-            'json_column',
-          );
+        const qIdAndFullJson = query.select('id').selectJson<{
+          json_column: { json_property1: string };
+        }>('json_column');
         type IdAndFullJson = GetQueryToResponse<typeof qIdAndFullJson>;
         expect(qIdAndFullJson.toObject().select).toEqual(['id', 'json_column']);
         assert<
@@ -1463,11 +1461,9 @@ describe('Query', () => {
           'select=id,json_column',
         );
 
-        const qIdAndJsonCol = query
-          .select('id')
-          .selectJson<{ json_property1: string }>(
-            'json_column->json_property1',
-          );
+        const qIdAndJsonCol = query.select('id').selectJson<{
+          json_property1: string;
+        }>('json_column->json_property1');
         type IdAndJsonCol = GetQueryToResponse<typeof qIdAndJsonCol>;
         expect(qIdAndJsonCol.toObject().select).toEqual([
           'id',
