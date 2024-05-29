@@ -116,15 +116,16 @@ type HorizontalFilterValue<
   DB extends BaseDB,
   TableName extends keyof DB,
   Column extends GetMethodColumn<DB, TableName>,
-> = Column extends VerticalColumnFilter<DB, TableName>
-  ? NonNullable<DB[TableName]['get'][Column]>
-  : Column extends CompositeStringFilter<DB, TableName>
-    ? string
-    : Column extends CompositeColumnFilter<DB, TableName>
-      ? never
-      : Column extends CompositeFilter<DB, TableName>
-        ? string | number
-        : never;
+> =
+  Column extends VerticalColumnFilter<DB, TableName>
+    ? NonNullable<DB[TableName]['get'][Column]>
+    : Column extends CompositeStringFilter<DB, TableName>
+      ? string
+      : Column extends CompositeColumnFilter<DB, TableName>
+        ? never
+        : Column extends CompositeFilter<DB, TableName>
+          ? string | number
+          : never;
 
 // NOTE: exported only for tests
 export const HORIZONTAL_FILTERS = [

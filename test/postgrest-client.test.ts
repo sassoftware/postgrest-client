@@ -738,7 +738,10 @@ describe('Postgrest Client', () => {
             query: pgClient
               .query('people')
               .eq('id', 1)
-              .selectJson<{ blood_type: string; country_code: number }>([
+              .selectJson<{
+                blood_type: string;
+                country_code: number;
+              }>([
                 'json_data->blood_type',
                 'json_data->phones->0->country_code',
               ])
