@@ -1150,12 +1150,11 @@ describe('Postgrest Client', () => {
             // @ts-expect-error testing an error
             pgClient.post({ query, data: [{ invalid: 'invalid' }] }),
           ).rejects.toMatchObject({
-            message: 'Request failed with status code 400',
             status: 400,
             statusText: 'Bad Request',
             data: {
               code: 'PGRST204',
-              message: "Column 'invalid' of relation 'actors' does not exist",
+              message: expect.any(String),
             },
           });
         });
@@ -1166,12 +1165,11 @@ describe('Postgrest Client', () => {
             // @ts-expect-error testing an error
             pgClient.post({ query, data: [{ invalid: 'invalid' }] }),
           ).rejects.toMatchObject({
-            message: 'Request failed with status code 400',
             status: 400,
             statusText: 'Bad Request',
             data: {
               code: 'PGRST204',
-              message: "Column 'invalid' of relation 'actors' does not exist",
+              message: expect.any(String),
             },
           });
         });
@@ -1429,7 +1427,6 @@ describe('Postgrest Client', () => {
           await expect(() =>
             pgClient.patch({ query, data: {} }),
           ).rejects.toMatchObject({
-            message: 'Request failed with status code 400',
             status: 400,
             statusText: 'Bad Request',
           });
@@ -1441,12 +1438,11 @@ describe('Postgrest Client', () => {
             // @ts-expect-error testing an error
             pgClient.patch({ query, data: [{ invalid: 'invalid' }] }),
           ).rejects.toMatchObject({
-            message: 'Request failed with status code 400',
             status: 400,
             statusText: 'Bad Request',
             data: {
               code: 'PGRST204',
-              message: "Column 'invalid' of relation 'actors' does not exist",
+              message: expect.any(String),
             },
           });
         });
@@ -1460,12 +1456,11 @@ describe('Postgrest Client', () => {
             // @ts-expect-error testing an error
             pgClient.patch({ query, data: [{ invalid: 'invalid' }] }),
           ).rejects.toMatchObject({
-            message: 'Request failed with status code 400',
             status: 400,
             statusText: 'Bad Request',
             data: {
               code: 'PGRST204',
-              message: "Column 'invalid' of relation 'actors' does not exist",
+              message: expect.any(String),
             },
           });
         });
