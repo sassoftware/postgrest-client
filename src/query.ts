@@ -214,7 +214,7 @@ export class Query<
   }
 
   /**
-   * Sets boolean value marking this as a tope level filter.
+   * Sets boolean value marking this as a top level filter.
    * And adds `!inner` to the query constructed.
    *
    * This is used only in embedded queries and will throw an error otherwise.
