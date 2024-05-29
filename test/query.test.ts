@@ -1395,6 +1395,99 @@ describe('Query', () => {
         );
       });
 
+      describe('top level ordering', () => {
+        it('simple', () => {
+          const query = q1.select([
+            '*',
+            q2.select('*').order([{ column: 'id', top: true }]),
+          ]);
+          expect(query.toString({ encoded: false })).toBe(
+            'select=*,test_table2(*)&order=test_table2(id)',
+          );
+        });
+
+        it('simple desc', () => {
+          const query = q1.select([
+            '*',
+            q2.select('*').order([{ column: 'id', top: true, order: 'desc' }]),
+          ]);
+          expect(query.toString({ encoded: false })).toBe(
+            'select=*,test_table2(*)&order=test_table2(id).desc',
+          );
+        });
+
+        it('with rename', () => {
+          const query = q1.select([
+            '*',
+            [
+              q2
+                .select('*')
+                .order([{ column: 'id', top: true, order: 'desc' }]),
+              { name: 't2' },
+            ],
+          ]);
+          expect(query.toString({ encoded: false })).toBe(
+            'select=*,t2:test_table2(*)&order=t2(id).desc',
+          );
+        });
+
+        it('multiple', () => {
+          const query = q1.select([
+            '*',
+            q2.select('*').order([
+              { column: 'id', top: true },
+              { column: 'table1_id', top: true },
+            ]),
+          ]);
+          expect(query.toString({ encoded: false })).toBe(
+            'select=*,test_table2(*)&order=test_table2(id),test_table2(table1_id)',
+          );
+        });
+
+        it('combination', () => {
+          const query = q1.select([
+            '*',
+            q2
+              .select('*')
+              .order([{ column: 'id', top: true }, { column: 'table1_id' }]),
+          ]);
+          expect(query.toString({ encoded: false })).toBe(
+            'select=*,test_table2(*)&order=test_table2(id)&test_table2.order=table1_id',
+          );
+        });
+
+        it('multi level nesting', () => {
+          const query = q1.select('*').select(
+            q2
+              .select('*')
+              .order([{ column: 'id', top: true }])
+              .select(q1.select('*').order([{ column: 'id', top: true }])),
+          );
+          expect(query.toString({ encoded: false })).toBe(
+            'select=*,test_table2(*,test_table(*))&order=test_table2(id),test_table2(test_table(id))',
+          );
+        });
+
+        it('weighted', () => {
+          const query = q1
+            .select(['*', q2.select('*').order([{ column: 'id', top: true }])])
+            .order([{ column: 'id', weight: 1 }]);
+          expect(query.toString({ encoded: false })).toBe(
+            'select=*,test_table2(*)&order=id,test_table2(id)',
+          );
+
+          const query2 = q1
+            .select([
+              '*',
+              q2.select('*').order([{ column: 'id', top: true, weight: 1 }]),
+            ])
+            .order([{ column: 'id' }]);
+          expect(query2.toString({ encoded: false })).toBe(
+            'select=*,test_table2(*)&order=test_table2(id),id',
+          );
+        });
+      });
+
       // https://postgrest.org/en/stable/references/api/resource_embedding.html#null-filtering-on-embedded-resources
       it.todo('null filtering');
     });

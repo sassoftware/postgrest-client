@@ -730,6 +730,115 @@ describe('Postgrest Client', () => {
           // NOTE: there's no way to fail the test if the type assertion is incorrect
           // so this test will always succeed in runtime, but it might fail static analysis
         });
+
+        describe('top level ordering', () => {
+          it('simple', async () => {
+            const { rows } = await pgClient.get({
+              query: pgClient
+                .query('films')
+                .select('title')
+                .select(
+                  pgClient
+                    .embeddedQuery('directors', 'one')
+                    .select('*')
+                    .order([{ column: 'last_name', top: true }]),
+                ),
+            });
+            expect(rows).toEqual([
+              { title: 'The Godfather', directors: expect.any(Object) },
+              { title: 'The Godfather Part II', directors: expect.any(Object) },
+              {
+                title: 'The Shawshank Redemption',
+                directors: expect.any(Object),
+              },
+              { title: 'The Dark Knight', directors: expect.any(Object) },
+            ]);
+          });
+
+          it('simple desc', async () => {
+            const { rows } = await pgClient.get({
+              query: pgClient
+                .query('films')
+                .select('title')
+                .select(
+                  pgClient
+                    .embeddedQuery('directors', 'one')
+                    .select('*')
+                    .order([{ column: 'last_name', top: true, order: 'desc' }]),
+                ),
+            });
+            expect(rows).toEqual([
+              { title: 'The Dark Knight', directors: expect.any(Object) },
+              {
+                title: 'The Shawshank Redemption',
+                directors: expect.any(Object),
+              },
+              { title: 'The Godfather', directors: expect.any(Object) },
+              { title: 'The Godfather Part II', directors: expect.any(Object) },
+            ]);
+          });
+
+          it('secondary', async () => {
+            console.log(
+              pgClient
+                .query('films')
+                .select('title')
+                .select(
+                  pgClient
+                    .embeddedQuery('directors', 'one')
+                    .select('*')
+                    .order([{ column: 'last_name', top: true }]),
+                )
+                .order([{ column: 'year', order: 'desc' }])
+                .toString({ encoded: false }),
+            );
+            const { rows } = await pgClient.get({
+              query: pgClient
+                .query('films')
+                .select('title')
+                .select(
+                  pgClient
+                    .embeddedQuery('directors', 'one')
+                    .select('*')
+                    .order([{ column: 'last_name', top: true }]),
+                )
+                .order([{ column: 'year', order: 'desc' }]),
+            });
+            expect(rows).toEqual([
+              { title: 'The Godfather Part II', directors: expect.any(Object) },
+              { title: 'The Godfather', directors: expect.any(Object) },
+              {
+                title: 'The Shawshank Redemption',
+                directors: expect.any(Object),
+              },
+              { title: 'The Dark Knight', directors: expect.any(Object) },
+            ]);
+          });
+
+          it('with rename', async () => {
+            const { rows } = await pgClient.get({
+              query: pgClient
+                .query('films')
+                .select('title')
+                .select([
+                  pgClient
+                    .embeddedQuery('directors', 'one')
+                    .select('*')
+                    .order([{ column: 'last_name', top: true }]),
+                  { name: 'director' },
+                ]),
+            });
+            expect(rows).toEqual([
+              { title: 'The Godfather', director: expect.any(Object) },
+              { title: 'The Godfather Part II', director: expect.any(Object) },
+              {
+                title: 'The Shawshank Redemption',
+                director: expect.any(Object),
+              },
+              { title: 'The Dark Knight', director: expect.any(Object) },
+            ]);
+          });
+        });
       });
 
       describe('JSON columns', () => {

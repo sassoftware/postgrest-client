@@ -58,7 +58,7 @@ The PostgREST Client is a type-safe TypeScript client designed for use with Post
   - ⬜ Null filtering
   - ✅ Empty embedded
   - ✅ Embedded ordering
-  - ⬜ Top-level ordering
+  - ✅ Top-level ordering
   - ⬜ Spread embedded resources
 - 🔳 Resource representation
   - ✅ Singular or plural

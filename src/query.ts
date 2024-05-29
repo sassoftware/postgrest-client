@@ -51,6 +51,14 @@ type Order<DB extends BaseDB, TableName extends keyof DB> = {
   column: GetMethodColumn<DB, TableName>;
   order?: 'asc' | 'desc';
   nulls?: 'first' | 'last';
+  top?: boolean;
+  /**
+   * Optional weight number for precedence.
+   * Useful for top level ordering with embedded queries.
+   * Ordered by lower number first.
+   * @default 0
+   */
+  weight?: number;
 };
 
 type QueryData<DB extends BaseDB, TableName extends keyof DB> = {
@@ -838,40 +846,49 @@ export class Query<
    * [['order', 'id.desc'], ['anotherTable.order', 'id']]
    * ```
    */
-  #getOrderFilter() {
-    const entries: [string, string][] = [];
+  #getOrderFilter({ name }: { name?: string } = {}) {
+    const entries: Record<string, string> = {};
 
     if (this.#props.order.length > 0) {
-      entries.push([
-        'order',
-        this.#props.order
-          .map(({ column, order, nulls }) => {
-            let res = column as string;
-            if (order) {
-              res += `.${order}`;
-            }
-            if (nulls) {
-              res += `.nulls${nulls}`;
-            }
-            return res;
-          })
-          .join(','),
-      ]);
+      this.#props.order.forEach(({ column, order, nulls, top }) => {
+        if (top && !name) {
+          throw new Error('Top ordering cannot be used on top level queries.');
+        }
+
+        let res = top ? `${name}(${column})` : (column as string);
+        if (order) {
+          res += `.${order}`;
+        }
+        if (nulls) {
+          res += `.nulls${nulls}`;
+        }
+
+        const key = top || !name ? 'order' : `${name}.order`;
+        entries[key] = entries[key] ? `${entries[key]},${res}` : res;
+      });
     }
 
     this.#props.select.forEach((selectItem) => {
       if (selectItem instanceof Query) {
-        selectItem.#getOrderFilter().forEach(([key, val]) => {
-          entries.push([`${selectItem.#props.tableName}.${key}`, val]);
-        });
+        selectItem
+          .#getOrderFilter({
+            name: selectItem.#props.tableName,
+          })
+          .forEach(([key, val]) => {
+            const value = name ? `${name}(${val})` : val;
+            entries[key] = entries[key] ? `${entries[key]},${value}` : value;
+          });
       } else if (Array.isArray(selectItem) && selectItem[0] instanceof Query) {
-        selectItem[0].#getOrderFilter().forEach(([key, val]) => {
-          entries.push([`${selectItem[1].name}.${key}`, val]);
-        });
+        selectItem[0]
+          .#getOrderFilter({ name: selectItem[1].name })
+          .forEach(([key, val]) => {
+            const value = name ? `${name}(${val})` : val;
+            entries[key] = entries[key] ? `${entries[key]},${value}` : value;
+          });
       }
     });
 
-    return entries;
+    return Object.entries(entries);
   }
 
   /**
