@@ -217,7 +217,7 @@ export class Query<
    * Sets boolean value marking this as a tope level filter.
    * And adds `!inner` to the query constructed.
    *
-   * This is used only in embedded queries and will be ignored otherwise.
+   * This is used only in embedded queries and will throw an error otherwise.
    *
    * @see https://postgrest.org/en/v12/references/api/resource_embedding.html#top-level-filtering
    *
@@ -723,6 +723,10 @@ export class Query<
       return `${renamePrefix}${this.#props.tableName}${inner}(${selectStr})`;
     }
 
+    if (this.#props.inner && !isNested) {
+      throw new Error('.inner() can be used only on embedded queries');
+    }
+
     return selectStr;
   }
 
@@ -976,6 +980,9 @@ export class Query<
    *
    * @param options optional object `{ encoded?: boolean }`
    * @returns Query string (URL encoded by default).
+   *
+   * @throws {Error}
+   * Throws when top level filtering for top level query (non-embedded) is detected.
    */
   toString({
     encoded = true,
