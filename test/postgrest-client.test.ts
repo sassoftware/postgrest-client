@@ -864,6 +864,17 @@ describe('Postgrest Client', () => {
             phones: [{ country_code: 61, number: '917-929-5745' }],
           });
         });
+
+        it('order', async () => {
+          const { rows } = await pgClient.get({
+            query: pgClient
+              .query('countries')
+              .selectJson<{ lat: number }>(['location->lat', { name: 'lat' }])
+              .order([{ column: 'location->lat', order: 'desc' }]),
+          });
+          const ordered = [...rows].sort((a, b) => b.lat - a.lat);
+          expect(ordered).toEqual(rows);
+        });
       });
 
       describe('composite columns', () => {
