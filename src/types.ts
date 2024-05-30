@@ -4,7 +4,7 @@ SPDX-License-Identifier: Apache-2.0
 */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { UnionToIntersection } from 'type-fest';
+import { Simplify, UnionToIntersection } from 'type-fest';
 
 import { Query } from './query';
 
@@ -484,8 +484,53 @@ export type VerticalFilterReturn<
                   Selector
                 >,
   H,
-  M
+  M,
+  Simplify<
+    DB[TableName]['get'] &
+      (Selector extends VerticalEmbeddedFilterWithModifier<DB>
+        ? SelectorToTable<DB, Selector>
+        : Selector extends ReadonlyArray<infer S>
+          ? SelectorToTable<DB, S>
+          : SelectorToTable<DB, Selector>)
+  >
 >;
+
+type SelectorToTable<DB extends BaseDB, Selector> =
+  Selector extends Query<
+    DB,
+    infer TN,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    infer _C,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    infer _RS,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    infer _H,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    infer _M,
+    infer QO
+  >
+    ? { [T in keyof DB]: T extends TN ? QO : never }
+    : Selector extends VerticalEmbeddedFilterWithModifier<DB>
+      ? Selector[0] extends Query<
+          DB,
+          infer STN,
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          infer _SC,
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          infer _SRS,
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          infer _H,
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          infer _M,
+          infer SQO
+        >
+        ? Rename<
+            { [T in keyof DB]: T extends STN ? SQO : never },
+            STN,
+            Selector[1]
+          >
+        : object
+      : object;
 
 type JsonColumnFilterReturn<
   DB extends BaseDB,

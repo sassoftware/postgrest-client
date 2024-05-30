@@ -737,12 +737,8 @@ describe('Postgrest Client', () => {
               query: pgClient
                 .query('films')
                 .select('title')
-                .select(
-                  pgClient
-                    .embeddedQuery('directors', 'one')
-                    .select('*')
-                    .order([{ column: 'last_name', top: true }]),
-                ),
+                .select(pgClient.embeddedQuery('directors', 'one').select('*'))
+                .order([{ column: 'directors.last_name' }]),
             });
             expect(rows).toEqual([
               { title: 'The Godfather', directors: expect.any(Object) },
@@ -760,12 +756,8 @@ describe('Postgrest Client', () => {
               query: pgClient
                 .query('films')
                 .select('title')
-                .select(
-                  pgClient
-                    .embeddedQuery('directors', 'one')
-                    .select('*')
-                    .order([{ column: 'last_name', top: true, order: 'desc' }]),
-                ),
+                .select(pgClient.embeddedQuery('directors', 'one').select('*'))
+                .order([{ column: 'directors.last_name', order: 'desc' }]),
             });
             expect(rows).toEqual([
               { title: 'The Dark Knight', directors: expect.any(Object) },
@@ -779,30 +771,15 @@ describe('Postgrest Client', () => {
           });
 
           it('secondary', async () => {
-            console.log(
-              pgClient
-                .query('films')
-                .select('title')
-                .select(
-                  pgClient
-                    .embeddedQuery('directors', 'one')
-                    .select('*')
-                    .order([{ column: 'last_name', top: true }]),
-                )
-                .order([{ column: 'year', order: 'desc' }])
-                .toString({ encoded: false }),
-            );
             const { rows } = await pgClient.get({
               query: pgClient
                 .query('films')
                 .select('title')
-                .select(
-                  pgClient
-                    .embeddedQuery('directors', 'one')
-                    .select('*')
-                    .order([{ column: 'last_name', top: true }]),
-                )
-                .order([{ column: 'year', order: 'desc' }]),
+                .select(pgClient.embeddedQuery('directors', 'one').select('*'))
+                .order([
+                  { column: 'directors.last_name' },
+                  { column: 'year', order: 'desc' },
+                ]),
             });
             expect(rows).toEqual([
               { title: 'The Godfather Part II', directors: expect.any(Object) },
@@ -821,12 +798,10 @@ describe('Postgrest Client', () => {
                 .query('films')
                 .select('title')
                 .select([
-                  pgClient
-                    .embeddedQuery('directors', 'one')
-                    .select('*')
-                    .order([{ column: 'last_name', top: true }]),
+                  pgClient.embeddedQuery('directors', 'one').select('*'),
                   { name: 'director' },
-                ]),
+                ])
+                .order([{ column: 'director.last_name' }]),
             });
             expect(rows).toEqual([
               { title: 'The Godfather', director: expect.any(Object) },

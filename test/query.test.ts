@@ -1397,91 +1397,87 @@ describe('Query', () => {
 
       describe('top level ordering', () => {
         it('simple', () => {
-          const query = q1.select([
-            '*',
-            q2.select('*').order([{ column: 'id', top: true }]),
-          ]);
+          const query = q1
+            .select(['*', q2.select('*')])
+            .order([{ column: 'test_table2.id' }]);
           expect(query.toString({ encoded: false })).toBe(
             'select=*,test_table2(*)&order=test_table2(id)',
           );
         });
 
         it('simple desc', () => {
-          const query = q1.select([
-            '*',
-            q2.select('*').order([{ column: 'id', top: true, order: 'desc' }]),
-          ]);
+          const query = q1
+            .select(['*', q2.select('*')])
+            .order([{ column: 'test_table2.id', order: 'desc' }]);
           expect(query.toString({ encoded: false })).toBe(
             'select=*,test_table2(*)&order=test_table2(id).desc',
           );
         });
 
         it('with rename', () => {
-          const query = q1.select([
-            '*',
-            [
-              q2
-                .select('*')
-                .order([{ column: 'id', top: true, order: 'desc' }]),
-              { name: 't2' },
-            ],
-          ]);
+          const query = q1
+            .select('*')
+            .select([q2.select('*'), { name: 't2' }])
+            .order([{ column: 't2.id', order: 'desc' }]);
+          expect(query.toString({ encoded: false })).toBe(
+            'select=*,t2:test_table2(*)&order=t2(id).desc',
+          );
+        });
+
+        it('with rename (array selector)', () => {
+          const query = q1
+            .select(['*', [q2.select('*'), { name: 't2' }]])
+            .order([{ column: 't2.id', order: 'desc' }]);
           expect(query.toString({ encoded: false })).toBe(
             'select=*,t2:test_table2(*)&order=t2(id).desc',
           );
         });
 
         it('multiple', () => {
-          const query = q1.select([
-            '*',
-            q2.select('*').order([
-              { column: 'id', top: true },
-              { column: 'table1_id', top: true },
-            ]),
-          ]);
+          const query = q1
+            .select(['*', q2.select('*')])
+            .order([
+              { column: 'test_table2.id' },
+              { column: 'test_table2.table1_id' },
+            ]);
           expect(query.toString({ encoded: false })).toBe(
             'select=*,test_table2(*)&order=test_table2(id),test_table2(table1_id)',
           );
         });
 
         it('combination', () => {
-          const query = q1.select([
-            '*',
-            q2
-              .select('*')
-              .order([{ column: 'id', top: true }, { column: 'table1_id' }]),
-          ]);
+          const query = q1
+            .select(['*', q2.select('*').order([{ column: 'table1_id' }])])
+            .order([{ column: 'test_table2.id' }]);
           expect(query.toString({ encoded: false })).toBe(
             'select=*,test_table2(*)&order=test_table2(id)&test_table2.order=table1_id',
           );
         });
 
         it('multi level nesting', () => {
-          const query = q1.select('*').select(
-            q2
-              .select('*')
-              .order([{ column: 'id', top: true }])
-              .select(q1.select('*').order([{ column: 'id', top: true }])),
-          );
+          const query = q1
+            .select('*')
+            .select(q2.select('*').select(q1.select('*')))
+            .order([
+              { column: 'test_table2.id' },
+              { column: 'test_table2.test_table.id' },
+            ]);
           expect(query.toString({ encoded: false })).toBe(
             'select=*,test_table2(*,test_table(*))&order=test_table2(id),test_table2(test_table(id))',
           );
         });
 
-        it('weighted', () => {
+        it('precedence', () => {
           const query = q1
-            .select(['*', q2.select('*').order([{ column: 'id', top: true }])])
-            .order([{ column: 'id', weight: 1 }]);
+            .select(['*', q2.select('*')])
+            .order([{ column: 'id' }, { column: 'test_table2.id' }]);
           expect(query.toString({ encoded: false })).toBe(
             'select=*,test_table2(*)&order=id,test_table2(id)',
           );
 
           const query2 = q1
-            .select([
-              '*',
-              q2.select('*').order([{ column: 'id', top: true, weight: 1 }]),
-            ])
-            .order([{ column: 'id' }]);
+            .select(['*', q2.select('*')])
+            .order([{ column: 'test_table2.id' }, { column: 'id' }]);
           expect(query2.toString({ encoded: false })).toBe(
             'select=*,test_table2(*)&order=test_table2(id),id',
           );
