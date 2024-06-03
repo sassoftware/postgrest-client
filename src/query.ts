@@ -93,6 +93,7 @@ type QueryData<DB extends BaseDB, TableName extends keyof DB> = {
   offset: number;
   limit?: number;
   columns: GetMethodColumn<DB, keyof DB>[];
+  inner: boolean;
 } & Headers;
 
 export type QueryDataObject<
@@ -202,6 +203,7 @@ export class Query<
       order: [],
       offset: 0,
       columns: [],
+      inner: false,
       ...props,
     });
   }
@@ -231,6 +233,20 @@ export class Query<
    */
   single(): Query<DB, TableName, 'one', R, H, M, QO> {
     return this.#clone({ cardinality: 'one' });
+  }
+
+  /**
+   * Sets boolean value marking this as a top level filter.
+   * And adds `!inner` to the query constructed.
+   *
+   * This is used only in embedded queries and will throw an error otherwise.
+   *
+   * @see https://postgrest.org/en/v12/references/api/resource_embedding.html#top-level-filtering
+   *
+   * @returns a new immutable instance of the query with inner set.
+   */
+  inner() {
+    return this.#clone({ inner: true });
   }
 
   /**
@@ -733,7 +749,12 @@ export class Query<
 
     if (isNested) {
       const renamePrefix = name ? `${name}:` : '';
-      return `${renamePrefix}${this.#props.tableName}(${selectStr})`;
+      const inner = this.#props.inner ? `!inner` : '';
+      return `${renamePrefix}${this.#props.tableName}${inner}(${selectStr})`;
+    }
+
+    if (this.#props.inner && !isNested) {
+      throw new Error('.inner() can be used only on embedded queries');
     }
 
     return selectStr;
@@ -999,6 +1020,9 @@ export class Query<
    *
    * @param options optional object `{ encoded?: boolean }`
    * @returns Query string (URL encoded by default).
+   *
+   * @throws {Error}
+   * Throws when top level filtering for top level query (non-embedded) is detected.
    */
   toString({
     encoded = true,

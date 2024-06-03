@@ -54,7 +54,7 @@ The PostgREST Client is a type-safe TypeScript client designed for use with Post
   - ✅ Foreign key joins on write
   - ✅ Nested embedding
   - ✅ Embedded filtering
-  - ⬜ Top-level filtering
+  - ✅ Top-level filtering
   - ⬜ Null filtering
   - ✅ Empty embedded
   - ✅ Embedded ordering
