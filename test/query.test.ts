@@ -1383,16 +1383,22 @@ describe('Query', () => {
         );
       });
 
-      it.todo('top level filtering (!inner)', () => {
-        // TODO: needs a way to tell it to do top level filtering
-        const query = q1.select(['*', q2.select('*').eq('id', 1)]);
-        expect(query.toObject()).toMatchObject({
-          tableName: 'test_table',
-          select: ['*', { tableName: 'test_table2', eq: [['id', 1, false]] }],
+      describe('top level filtering (!inner)', () => {
+        it('simple', () => {
+          const query = q1.select(['*', q2.select('*').eq('id', 1).inner()]);
+          expect(query.toObject()).toMatchObject({
+            tableName: 'test_table',
+            select: ['*', { tableName: 'test_table2', eq: [['id', 1, false]] }],
+          });
+          expect(query.toString({ encoded: false })).toBe(
+            'select=*,test_table2!inner(*)&test_table2.id=eq.1',
+          );
         });
-        expect(query.toString({ encoded: false })).toBe(
-          'select=*,test_table2!inner(*)&test_table2.id=eq.1',
-        );
+
+        it('throws on non-embedded query', () => {
+          const query = q1.select('*').inner();
+          expect(() => query.toString()).toThrowError();
+        });
       });
 
       // https://postgrest.org/en/stable/references/api/resource_embedding.html#null-filtering-on-embedded-resources

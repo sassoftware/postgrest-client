@@ -730,6 +730,63 @@ describe('Postgrest Client', () => {
           // NOTE: there's no way to fail the test if the type assertion is incorrect
           // so this test will always succeed in runtime, but it might fail static analysis
         });
+
+        describe('top level filtering (!inner)', () => {
+          it('compared to non inner', async () => {
+            const nonInner = await pgClient.get({
+              query: pgClient
+                .query('films')
+                .select([
+                  pgClient
+                    .embeddedQuery('directors', 'one')
+                    .eq('last_name', 'Coppola'),
+                ]),
+            });
+
+            expect(nonInner.rows).toHaveLength(4);
+
+            const inner = await pgClient.get({
+              query: pgClient
+                .query('films')
+                .select([
+                  pgClient
+                    .embeddedQuery('directors', 'one')
+                    .eq('last_name', 'Coppola')
+                    .inner(),
+                ]),
+            });
+
+            expect(inner.rows).toHaveLength(2);
+          });
+
+          it('with rename', async () => {
+            const { rows } = await pgClient.get({
+              query: pgClient
+                .query('films')
+                .select('title')
+                .select([
+                  pgClient
+                    .embeddedQuery('directors', 'one')
+                    .select('*')
+                    .eq('last_name', 'Coppola')
+                    .inner(),
+                  // singular instead of plural ("directors")
+                  { name: 'director' },
+                ]),
+            });
+
+            expect(rows).toHaveLength(2);
+            const expectedDirector = {
+              id: expect.any(Number),
+              first_name: 'Francis',
+              last_name: 'Coppola',
+            };
+            expect(rows).toEqual([
+              { title: 'The Godfather', director: expectedDirector },
+              { title: 'The Godfather Part II', director: expectedDirector },
+            ]);
+          });
+        });
       });
 
       describe('JSON columns', () => {
