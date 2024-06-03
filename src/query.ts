@@ -3,6 +3,7 @@ Copyright © 2023, SAS Institute Inc., Cary, NC, USA.  All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
+import { EmptyObject } from 'type-fest';
 import {
   BaseDB,
   Cardinality,
@@ -47,8 +48,20 @@ type FilterItemTupleArray<
   Column extends keyof DB[TableName]['get'],
 > = [Column, (string | number)[], IsNegated];
 
-type Order<DB extends BaseDB, TableName extends keyof DB> = {
-  column: GetMethodColumn<DB, TableName>;
+type ObjPaths<T> = T extends EmptyObject
+  ? never
+  : T extends object
+    ? {
+        [K in keyof T]: K extends string
+          ? T[K] extends object
+            ? `${K}.${ObjPaths<T[K]>}`
+            : K
+          : never;
+      }[keyof T]
+    : never;
+
+type Order<QO extends object> = {
+  column: ObjPaths<QO>;
   order?: 'asc' | 'desc';
   nulls?: 'first' | 'last';
 };
@@ -72,7 +85,11 @@ type QueryData<DB extends BaseDB, TableName extends keyof DB> = {
   and: [Query<DB, keyof DB>[], IsNegated][];
   or: [Query<DB, keyof DB>[], IsNegated][];
   not: IsNegated;
-  order: Order<DB, keyof DB>[];
+  order: {
+    column: string;
+    order?: 'asc' | 'desc';
+    nulls?: 'first' | 'last';
+  }[];
   offset: number;
   limit?: number;
   columns: GetMethodColumn<DB, keyof DB>[];
@@ -159,6 +176,10 @@ export class Query<
    * * nullable used for "to-one" cardinality
    */
   M extends TypeModifiers = { nullable: false },
+  /**
+   * Helper object for constructing dot notation paths
+   */
+  QO extends object = DB[TableName]['get'],
 > {
   readonly #props: QueryData<DB, TableName>;
 
@@ -189,7 +210,7 @@ export class Query<
 
   #clone(
     props: Partial<QueryData<DB, TableName>> = {},
-  ): Query<DB, TableName, C, R, H, M> {
+  ): Query<DB, TableName, C, R, H, M, QO> {
     return new Query({
       ...this.#props,
       ...props,
@@ -210,7 +231,7 @@ export class Query<
    *
    * @returns a new immutable instance of the query with different representation.
    */
-  single(): Query<DB, TableName, 'one', R, H> {
+  single(): Query<DB, TableName, 'one', R, H, M, QO> {
     return this.#clone({ cardinality: 'one' });
   }
 
@@ -236,7 +257,7 @@ export class Query<
    */
   count<const CT extends Count>(
     count: CT,
-  ): Query<DB, TableName, C, R, Omit<H, 'count'> & { count: CT }> {
+  ): Query<DB, TableName, C, R, Omit<H, 'count'> & { count: CT }, M, QO> {
     return this.#clone({ count });
   }
 
@@ -249,7 +270,15 @@ export class Query<
    */
   returning<const Ret extends Returning>(
     returning: Ret,
-  ): Query<DB, TableName, C, R, Omit<H, 'returning'> & { returning: Ret }> {
+  ): Query<
+    DB,
+    TableName,
+    C,
+    R,
+    Omit<H, 'returning'> & { returning: Ret },
+    M,
+    QO
+  > {
     return this.#clone({ returning });
   }
 
@@ -530,7 +559,7 @@ export class Query<
    * @param queries an array of queries
    * @returns an array of modified query copies
    */
-  and(queries: Query<DB, TableName>[]): Query<DB, TableName, C, R, H, M>;
+  and(queries: Query<DB, TableName>[]): Query<DB, TableName, C, R, H, M, QO>;
   /**
    * Logical operator `and`
    *
@@ -540,7 +569,7 @@ export class Query<
    */
   and(
     queryFn: (query: Query<DB, TableName>) => Query<DB, TableName>[],
-  ): Query<DB, TableName, C, R, H, M>;
+  ): Query<DB, TableName, C, R, H, M, QO>;
   and(
     q:
       | ((query: Query<DB, TableName>) => Query<DB, TableName>[])
@@ -572,7 +601,7 @@ export class Query<
    * @param queries an array of queries
    * @returns an array of modified query copies
    */
-  or(queries: Query<DB, TableName>[]): Query<DB, TableName, C, R, H, M>;
+  or(queries: Query<DB, TableName>[]): Query<DB, TableName, C, R, H, M, QO>;
   /**
    * Logical operator `or`
    *
@@ -582,7 +611,7 @@ export class Query<
    */
   or(
     queryFn: (query: Query<DB, TableName>) => Query<DB, TableName>[],
-  ): Query<DB, TableName, C, R, H, M>;
+  ): Query<DB, TableName, C, R, H, M, QO>;
   or(
     q:
       | ((query: Query<DB, TableName>) => Query<DB, TableName>[])
@@ -859,40 +888,50 @@ export class Query<
    * [['order', 'id.desc'], ['anotherTable.order', 'id']]
    * ```
    */
-  #getOrderFilter() {
-    const entries: [string, string][] = [];
+  #getOrderFilter({ name }: { name?: string } = {}) {
+    const entries: Record<string, string> = {};
 
     if (this.#props.order.length > 0) {
-      entries.push([
-        'order',
-        this.#props.order
-          .map(({ column, order, nulls }) => {
-            let res = column as string;
-            if (order) {
-              res += `.${order}`;
-            }
-            if (nulls) {
-              res += `.nulls${nulls}`;
-            }
-            return res;
-          })
-          .join(','),
-      ]);
+      this.#props.order.forEach(({ column, order, nulls }) => {
+        const parts = column.split('.').reverse();
+        let res = parts.shift()!;
+        parts.forEach((part) => {
+          res = `${part}(${res})`;
+        });
+
+        if (order) {
+          res += `.${order}`;
+        }
+        if (nulls) {
+          res += `.nulls${nulls}`;
+        }
+
+        const key = name ? `${name}.order` : 'order';
+        entries[key] = entries[key] ? `${entries[key]},${res}` : res;
+      });
     }
 
     this.#props.select.forEach((selectItem) => {
       if (selectItem instanceof Query) {
-        selectItem.#getOrderFilter().forEach(([key, val]) => {
-          entries.push([`${selectItem.#props.tableName}.${key}`, val]);
-        });
+        selectItem
+          .#getOrderFilter({
+            name: selectItem.#props.tableName,
+          })
+          .forEach(([key, val]) => {
+            const value = name ? `${name}(${val})` : val;
+            entries[key] = entries[key] ? `${entries[key]},${value}` : value;
+          });
       } else if (Array.isArray(selectItem) && selectItem[0] instanceof Query) {
-        selectItem[0].#getOrderFilter().forEach(([key, val]) => {
-          entries.push([`${selectItem[1].name}.${key}`, val]);
-        });
+        selectItem[0]
+          .#getOrderFilter({ name: selectItem[1].name })
+          .forEach(([key, val]) => {
+            const value = name ? `${name}(${val})` : val;
+            entries[key] = entries[key] ? `${entries[key]},${value}` : value;
+          });
       }
     });
 
-    return entries;
+    return Object.entries(entries);
   }
 
   /**
@@ -1059,10 +1098,8 @@ export class Query<
    * ```
    * @returns a new immutable instance of the query with added `order` parameter.
    */
-  order(order: Order<DB, TableName>[]) {
-    return this.#clone({
-      order: [...this.#props.order, ...(order as Order<DB, keyof DB>[])],
-    });
+  order<O extends Order<QO> = Order<QO>>(order: O[]) {
+    return this.#clone({ order: [...this.#props.order, ...order] });
   }
 
   /**

@@ -787,6 +787,90 @@ describe('Postgrest Client', () => {
             ]);
           });
         });
+
+        describe('top level ordering', () => {
+          it('simple', async () => {
+            const { rows } = await pgClient.get({
+              query: pgClient
+                .query('films')
+                .select('title')
+                .select(pgClient.embeddedQuery('directors', 'one').select('*'))
+                .order([{ column: 'directors.last_name' }]),
+            });
+            expect(rows).toEqual([
+              { title: 'The Godfather', directors: expect.any(Object) },
+              { title: 'The Godfather Part II', directors: expect.any(Object) },
+              {
+                title: 'The Shawshank Redemption',
+                directors: expect.any(Object),
+              },
+              { title: 'The Dark Knight', directors: expect.any(Object) },
+            ]);
+          });
+
+          it('simple desc', async () => {
+            const { rows } = await pgClient.get({
+              query: pgClient
+                .query('films')
+                .select('title')
+                .select(pgClient.embeddedQuery('directors', 'one').select('*'))
+                .order([{ column: 'directors.last_name', order: 'desc' }]),
+            });
+            expect(rows).toEqual([
+              { title: 'The Dark Knight', directors: expect.any(Object) },
+              {
+                title: 'The Shawshank Redemption',
+                directors: expect.any(Object),
+              },
+              { title: 'The Godfather', directors: expect.any(Object) },
+              { title: 'The Godfather Part II', directors: expect.any(Object) },
+            ]);
+          });
+
+          it('secondary', async () => {
+            const { rows } = await pgClient.get({
+              query: pgClient
+                .query('films')
+                .select('title')
+                .select(pgClient.embeddedQuery('directors', 'one').select('*'))
+                .order([
+                  { column: 'directors.last_name' },
+                  { column: 'year', order: 'desc' },
+                ]),
+            });
+            expect(rows).toEqual([
+              { title: 'The Godfather Part II', directors: expect.any(Object) },
+              { title: 'The Godfather', directors: expect.any(Object) },
+              {
+                title: 'The Shawshank Redemption',
+                directors: expect.any(Object),
+              },
+              { title: 'The Dark Knight', directors: expect.any(Object) },
+            ]);
+          });
+
+          it('with rename', async () => {
+            const { rows } = await pgClient.get({
+              query: pgClient
+                .query('films')
+                .select('title')
+                .select([
+                  pgClient.embeddedQuery('directors', 'one').select('*'),
+                  { name: 'director' },
+                ])
+                .order([{ column: 'director.last_name' }]),
+            });
+            expect(rows).toEqual([
+              { title: 'The Godfather', director: expect.any(Object) },
+              { title: 'The Godfather Part II', director: expect.any(Object) },
+              {
+                title: 'The Shawshank Redemption',
+                director: expect.any(Object),
+              },
+              { title: 'The Dark Knight', director: expect.any(Object) },
+            ]);
+          });
+        });
       });
 
       describe('JSON columns', () => {
@@ -836,6 +920,17 @@ describe('Postgrest Client', () => {
             age: 18,
             phones: [{ country_code: 61, number: '917-929-5745' }],
           });
+        });
+
+        it('order', async () => {
+          const { rows } = await pgClient.get({
+            query: pgClient
+              .query('countries')
+              .selectJson<{ lat: number }>(['location->lat', { name: 'lat' }])
+              .order([{ column: 'location->lat', order: 'desc' }]),
+          });
+          const ordered = [...rows].sort((a, b) => b.lat - a.lat);
+          expect(ordered).toEqual(rows);
         });
       });
 
