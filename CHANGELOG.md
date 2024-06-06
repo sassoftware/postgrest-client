@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## [v0.7.0](https://github.com/sassoftware/postgrest-client/releases/tag/v0.7.0) - 2024-06-03
+
+- [`eb2948d`](https://github.com/sassoftware/postgrest-client/commit/eb2948d303d735d25daca4f414bd3733d2bb92d0) feat: top level ordering (#14)
+- [`253ef91`](https://github.com/sassoftware/postgrest-client/commit/253ef9157b0690f8070b006fe328c332ee5b943a) feat: top level filter (!inner) (#12)
+
 ## [v0.6.2](https://github.com/sassoftware/postgrest-client/releases/tag/v0.6.2) - 2024-03-25
 
 - [`4683124`](https://github.com/sassoftware/postgrest-client/commit/4683124a2e35f8af32b8fbacc3573dd31fa1bb65) fix: allow capital letters in json selectors (#9)
