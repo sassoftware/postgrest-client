@@ -259,6 +259,38 @@ rows would have type Array<{
 */
 ```
 
+### Top level filtering
+
+Filtering on embedded resources doesn't change the top level resource.
+More information at https://postgrest.org/en/v12/references/api/resource_embedding.html#top-level-filtering.
+
+`.inner()` method can be used to filter top level rows.
+Example:
+
+```ts
+const { rows } = await pgClient.get({
+  query: pgClient
+    .query('directors')
+    .select(pgClient.embeddedQuery('films', 'many').eq('year', 2024).inner()),
+});
+```
+
+### Top level ordering
+
+Used to sort "many-to-one" and "one-to-one" relationships.
+For more information please see https://postgrest.org/en/v12/references/api/resource_embedding.html#top-level-ordering.
+
+Example ordering films by director's last name:
+
+```ts
+const { rows } = await pgClient.get({
+  query: pgClient
+    .query('films')
+    .select(pgClient.embeddedQuery('directors', 'one'))
+    .order([{ column: 'directors.last_name' }]),
+});
+```
+
 ## Immutability
 
 Update an existing record then fetch the first page:
