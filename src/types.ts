@@ -388,21 +388,68 @@ type VerticalEmbeddedFilterWithModifierReturn<
       : never
     : never;
 
-type E<T> = T extends `${string}->>${infer Col}` ? Col : never;
+/**
+ * Extracts leaf property name from JSON object.
+ *
+ * @typeParam P - path ending with `->>` with optional `->` in between
+ */
+type ExtractLeaf<P> = P extends `${string}->>${infer Col}` ? Col : never;
+
+/**
+ * Follows the path with single and double arrows to find if the object is typed.
+ * It returns `string` if the path is typed, and otherwise `string | null`.
+ *
+ * @typeParam P - path ending with `->>` with optional `->` in between
+ * @typeParam O - object possibly containing the path
+ * @typeParam L - leaf key in recursive calls
+ */
+type ExtractObj<
+  P extends string,
+  O extends Record<string, any>,
+  L extends keyof O = never,
+> = keyof O extends string
+  ? P extends `${infer P}->>${infer LL}`
+    ? P extends `${infer Col}->${infer PP}`
+      ? ExtractObj<PP, O[Col], LL>
+      : keyof O[P] extends string
+        ? string
+        : string | null
+    : P extends `${infer Col}->${infer PP}`
+      ? PP extends `${string}->${string}`
+        ? ExtractObj<PP, O[Col], L>
+        : string
+      : string
+  : string | null;
 
 type CompositeStringFilterReturn<
   DB extends BaseDB,
   TableName extends keyof DB,
   R extends object | '*' | null,
   Selector,
-> =
-  E<Selector> extends never
+> = Selector extends string
+  ? ExtractLeaf<Selector> extends never
     ? never
     : R extends '*'
-      ? DB[TableName]['get'] & { [P in E<Selector>]: string }
+      ? DB[TableName]['get'] & {
+          [P in ExtractLeaf<Selector>]: ExtractObj<
+            Selector,
+            DB[TableName]['get']
+          >;
+        }
       : R extends null
-        ? { [P in E<Selector>]: string }
-        : R & { [P in E<Selector>]: string };
+        ? {
+            [P in ExtractLeaf<Selector>]: ExtractObj<
+              Selector,
+              DB[TableName]['get']
+            >;
+          }
+        : R & {
+            [P in ExtractLeaf<Selector>]: ExtractObj<
+              Selector,
+              DB[TableName]['get']
+            >;
+          }
+  : never;
 
 type CompositeStringFilterWithModifierReturn<
   DB extends BaseDB,
@@ -413,16 +460,35 @@ type CompositeStringFilterWithModifierReturn<
   Selector extends CompositeStringFilterWithModifier<DB, TableName>
     ? R extends '*'
       ? Rename<
-          DB[TableName]['get'] & { [P in E<Selector[0]>]: string },
-          E<Selector[0]>,
+          DB[TableName]['get'] & {
+            [P in ExtractLeaf<Selector[0]>]: ExtractObj<
+              Selector[0],
+              DB[TableName]['get']
+            >;
+          },
+          ExtractLeaf<Selector[0]>,
           Selector[1]
         >
       : R extends null
-        ? Rename<{ [P in E<Selector[0]>]: string }, E<Selector[0]>, Selector[1]>
+        ? Rename<
+            {
+              [P in ExtractLeaf<Selector[0]>]: ExtractObj<
+                Selector[0],
+                DB[TableName]['get']
+              >;
+            },
+            ExtractLeaf<Selector[0]>,
+            Selector[1]
+          >
         : R &
             Rename<
-              { [P in E<Selector[0]>]: string },
-              E<Selector[0]>,
+              {
+                [P in ExtractLeaf<Selector[0]>]: ExtractObj<
+                  Selector[0],
+                  DB[TableName]['get']
+                >;
+              },
+              ExtractLeaf<Selector[0]>,
               Selector[1]
             >
     : never;

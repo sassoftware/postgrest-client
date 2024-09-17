@@ -687,12 +687,12 @@ describe.each([
           .query('people')
           .eq('id', 1)
           .selectJson<{
-            blood_type: string;
+            blood_type: string | null;
             country_code: number;
           }>(['json_data->blood_type', 'json_data->phones->0->country_code'])
           .single(),
       });
-      assert<Equals<typeof row.blood_type, string>>();
+      assert<Equals<typeof row.blood_type, string | null>>();
       assert<Equals<typeof row.country_code, number>>();
       expect(row.blood_type).toBeTypeOf('string');
       expect(row.country_code).toBeTypeOf('number');
@@ -709,8 +709,8 @@ describe.each([
           ])
           .single(),
       });
-      assert<Equals<typeof row.blood_type, string>>();
-      assert<Equals<typeof row.country_code, string>>();
+      assert<Equals<typeof row.blood_type, string | null>>();
+      assert<Equals<typeof row.country_code, string | null>>();
       expect(row.blood_type).toBeTypeOf('string');
       expect(row.country_code).toBeTypeOf('string');
     });
@@ -770,6 +770,7 @@ describe.each([
           .select(['languages->>0', { name: 'primary_language' }])
           .single(),
       });
+      assert<Equals<typeof row, { primary_language: string | null }>>();
       expect(row).toMatchObject({ primary_language: 'en' });
     });
   });
@@ -783,7 +784,7 @@ describe.each([
           .select(['json_data->>blood_type', { name: 'bloodType' }])
           .single(),
       });
-      assert<Equals<typeof row.bloodType, string>>();
+      assert<Equals<typeof row.bloodType, string | null>>();
       expect(row.bloodType).toBeTypeOf('string');
     });
 
@@ -798,8 +799,8 @@ describe.each([
           ])
           .single(),
       });
-      assert<Equals<typeof row.bloodType, string>>();
-      assert<Equals<typeof row.countryCode, string>>();
+      assert<Equals<typeof row.bloodType, string | null>>();
+      assert<Equals<typeof row.countryCode, string | null>>();
       expect(row.bloodType).toBeTypeOf('string');
       expect(row.countryCode).toBeTypeOf('string');
     });
