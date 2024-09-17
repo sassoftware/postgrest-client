@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { PostgrestClient } from '../../src/postgrest-client';
+import { PostgrestClient, QueryResponsePost } from '../../src/postgrest-client';
 import { BASE_URL } from './constants';
 import DB from './test-db';
 
@@ -17,13 +17,17 @@ describe.each([
     encodeQueryStrings,
   });
 
-  let testRow;
+  const query = pgClient
+    .query('directors')
+    .returning('representation')
+    .single();
+  let testRow: QueryResponsePost<typeof query>['row'];
   const specialCharsStr = ',.:() "\'\\';
   const reversedSpecialCharsStr = specialCharsStr.split('').reverse().join('');
 
   beforeAll(async () => {
     ({ row: testRow } = await pgClient.post({
-      query: pgClient.query('directors').returning('representation').single(),
+      query,
       data: {
         first_name: specialCharsStr,
         last_name: specialCharsStr,
