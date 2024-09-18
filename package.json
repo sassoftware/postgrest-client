@@ -34,6 +34,7 @@
     "format": "prettier . --write",
     "format:check": "prettier --check .",
     "circular-deps": "npx dpdm --transform --exit-code circular:1 --no-warning --no-tree src/postgrest-client.ts",
+    "typecheck": "npx tsc --noEmit",
     "prepare": "husky",
     "prepack": "npm ci; npm run build"
   },
