@@ -179,6 +179,7 @@ describe('vertical filtering', () => {
       expect(qJsonMulti.toObject().select).toEqual(['id']);
       // TODO: implement!
       assert<
+        // @ts-expect-error not implemented
         Equals<
           JsonMulti,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any

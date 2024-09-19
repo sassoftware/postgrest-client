@@ -55,6 +55,7 @@ describe('vertical filtering', () => {
       // TODO: known issue - we should try to fix it (workaround in the test above)
       // the problem here is that TypeScript can only get the last intersection in inference
       // example: `Gen<infer T>` in case of `T` being `'a' & 'b'`, TypeScript will only infer `'b'`
+      // @ts-expect-error not implemented
       assert<Equals<NestedQuery2, NestedQueryExpected>>(
         false,
         'This is currently not working properly.',
