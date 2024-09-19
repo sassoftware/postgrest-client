@@ -205,7 +205,13 @@ describe('vertical filtering', () => {
       assert<
         Equals<
           SingleWithId,
-          { rows: { id: number; someVal: string; someOtherVal: string }[] }
+          {
+            rows: {
+              id: number;
+              someVal: string | null;
+              someOtherVal: string | null;
+            }[];
+          }
         >
       >();
       expect(qSingleWithId.toString({ encoded: false })).toBe(
@@ -226,7 +232,13 @@ describe('vertical filtering', () => {
       assert<
         Equals<
           MultiWithId,
-          { rows: { id: number; someVal: string; someOtherVal: string }[] }
+          {
+            rows: {
+              id: number;
+              someVal: string | null;
+              someOtherVal: string | null;
+            }[];
+          }
         >
       >();
       expect(qMultiWithId.toString({ encoded: false })).toBe(
