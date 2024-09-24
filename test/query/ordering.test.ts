@@ -61,4 +61,50 @@ describe('order', () => {
         .toString({ encoded: false }),
     ).toBe('order=col1,id');
   });
+
+  describe('JSON order', () => {
+    const query = new Query<DB, 'json_test_table'>({
+      tableName: 'json_test_table',
+    });
+
+    it('typed', () => {
+      expect(
+        query
+          .order([
+            { column: 'jsonColumn->someVar', order: 'desc', nulls: 'last' },
+          ])
+          .toString({ encoded: false }),
+      ).toBe('order=jsonColumn->someVar.desc.nullslast');
+    });
+
+    it('no types (any)', () => {
+      expect(
+        query
+          .order([
+            { column: 'json_column2->someVar', order: 'asc', nulls: 'first' },
+            { column: 'json_column2->someOtherVar' },
+            { column: 'json_column2->0->someVar' },
+          ])
+          .toString({ encoded: false }),
+      ).toBe(
+        'order=json_column2->someVar.asc.nullsfirst,json_column2->someOtherVar,json_column2->0->someVar',
+      );
+    });
+
+    it('nullable', () => {
+      const query = new Query<DB, 'nulls_table'>({
+        tableName: 'nulls_table',
+      });
+      expect(
+        query
+          .order([
+            { column: 'json_column->someVar', order: 'desc', nulls: 'last' },
+            { column: 'json_column->someOtherVar' },
+          ])
+          .toString({ encoded: false }),
+      ).toBe(
+        'order=json_column->someVar.desc.nullslast,json_column->someOtherVar',
+      );
+    });
+  });
 });
