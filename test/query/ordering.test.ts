@@ -71,10 +71,10 @@ describe('order', () => {
       expect(
         query
           .order([
-            { column: 'jsonColumn->someVar', order: 'desc', nulls: 'last' },
+            { column: 'json_column->someVar', order: 'desc', nulls: 'last' },
           ])
           .toString({ encoded: false }),
-      ).toBe('order=jsonColumn->someVar.desc.nullslast');
+      ).toBe('order=json_column->someVar.desc.nullslast');
     });
 
     it('no types (any)', () => {
