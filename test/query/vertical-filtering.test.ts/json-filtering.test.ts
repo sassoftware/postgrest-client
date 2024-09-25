@@ -92,8 +92,23 @@ describe('vertical filtering', () => {
             rows: {
               id: number;
               json_column: { someVal: number };
+              nullable_json_column: { nullableVal: number } | null;
+              nested_json_column: {
+                obj: {
+                  nestedVal: number;
+                  obj: { deeplyNestedVal: number };
+                };
+              };
+              nullable_nested_json_column: {
+                obj: {
+                  nullableNestedVal: number;
+                  obj: { nullableDeeplyNestedVal: number };
+                };
+              } | null;
               array_composite: number[];
-              // NOTE: converted `unknown` to `any` for ease of use
+              nullable_array_composite: number[] | null;
+              array_of_objects: { arrayVal: number }[];
+              nullable_array_of_objects: { nullableArrayVal: number }[] | null;
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               json_column2: any;
             }[];
@@ -112,8 +127,25 @@ describe('vertical filtering', () => {
           {
             rows: {
               id: number;
+              // NOTE: this could be JSON, but this could also be a composite column
               json_column: { someVal: number };
+              nullable_json_column: { nullableVal: number } | null;
+              nested_json_column: {
+                obj: {
+                  nestedVal: number;
+                  obj: { deeplyNestedVal: number };
+                };
+              };
+              nullable_nested_json_column: {
+                obj: {
+                  nullableNestedVal: number;
+                  obj: { nullableDeeplyNestedVal: number };
+                };
+              } | null;
               array_composite: number[];
+              nullable_array_composite: number[] | null;
+              array_of_objects: { arrayVal: number }[];
+              nullable_array_of_objects: { nullableArrayVal: number }[] | null;
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               json_column2: any;
             }[];
@@ -244,6 +276,135 @@ describe('vertical filtering', () => {
       expect(qMultiWithId.toString({ encoded: false })).toBe(
         'select=id,json_column2->>someVal,json_column2->anObj->>someOtherVal',
       );
+    });
+
+    it('nullable types', () => {
+      const qSingleWithId = query
+        .select('id')
+        .select('json_column2->>someVal')
+        .select('json_column2->anObj->>someOtherVal')
+        .select('array_of_objects->0->>arrayVal')
+        .select('nullable_json_column->>nullableVal')
+        .select('nested_json_column->obj->>nestedVal')
+        .select('nested_json_column->obj->obj->>deeplyNestedVal')
+        .select('nullable_nested_json_column->obj->>nullableNestedVal')
+        .select(
+          'nullable_nested_json_column->obj->obj->>nullableDeeplyNestedVal',
+        )
+        .select('nullable_array_of_objects->0->>nullableArrayVal');
+      type SingleWithId = GetQueryToResponse<typeof qSingleWithId>;
+      assert<
+        Equals<
+          SingleWithId,
+          {
+            rows: {
+              id: number;
+              someVal: string | null;
+              someOtherVal: string | null;
+              arrayVal: string | null;
+              nullableVal: string | null;
+              nestedVal: string;
+              deeplyNestedVal: string;
+              nullableNestedVal: string | null;
+              nullableDeeplyNestedVal: string | null;
+              nullableArrayVal: string | null;
+            }[];
+          }
+        >
+      >();
+
+      const qSingleWithIdRenamed = query
+        .select(['id', { name: 'renamedId' }])
+        .select(['json_column2->>someVal', { name: 'renamedSomeVal' }])
+        .select([
+          'json_column2->anObj->>someOtherVal',
+          { name: 'renamedSomeOtherVal' },
+        ])
+        .select(['array_of_objects->0->>arrayVal', { name: 'renamedArrayVal' }])
+        .select([
+          'nullable_json_column->>nullableVal',
+          { name: 'renamedNullableVal' },
+        ])
+        .select([
+          'nullable_nested_json_column->obj->>nullableNestedVal',
+          { name: 'renamedNullableNestedVal' },
+        ])
+        .select([
+          'nullable_array_of_objects->0->>nullableArrayVal',
+          { name: 'renamedNullableArrayVal' },
+        ]);
+      type SingleWithIdRenamed = GetQueryToResponse<
+        typeof qSingleWithIdRenamed
+      >;
+      assert<
+        Equals<
+          SingleWithIdRenamed,
+          {
+            rows: {
+              renamedId: number;
+              renamedSomeVal: string | null;
+              renamedSomeOtherVal: string | null;
+              renamedArrayVal: string | null;
+              renamedNullableVal: string | null;
+              renamedNullableNestedVal: string | null;
+              renamedNullableArrayVal: string | null;
+            }[];
+          }
+        >
+      >();
+
+      const qMultiWithId = query.select([
+        'id',
+        'json_column2->>someVal',
+        'json_column2->anObj->>someOtherVal',
+        'array_of_objects->0->>arrayVal',
+        'nullable_json_column->>nullableVal',
+        'nullable_array_of_objects->0->>nullableArrayVal',
+      ]);
+      type MultiWithId = GetQueryToResponse<typeof qMultiWithId>;
+      assert<
+        Equals<
+          MultiWithId,
+          {
+            rows: {
+              id: number;
+              someVal: string | null;
+              someOtherVal: string | null;
+              arrayVal: string | null;
+              nullableVal: string | null;
+              nullableArrayVal: string | null;
+            }[];
+          }
+        >
+      >();
+
+      const qMultiWithIdRenamed = query.select([
+        ['id', { name: 'renamedId' }],
+        ['json_column2->>someVal', { name: 'renamedSomeVal' }],
+        ['json_column2->anObj->>someOtherVal', { name: 'renamedSomeOtherVal' }],
+        ['array_of_objects->0->>arrayVal', { name: 'renamedArrayVal' }],
+        ['nullable_json_column->>nullableVal', { name: 'renamedNullableVal' }],
+        [
+          'nullable_array_of_objects->0->>nullableArrayVal',
+          { name: 'renamedNullableArrayVal' },
+        ],
+      ]);
+      type MultiWithIdRenamed = GetQueryToResponse<typeof qMultiWithIdRenamed>;
+      assert<
+        Equals<
+          MultiWithIdRenamed,
+          {
+            rows: {
+              renamedId: number;
+              renamedSomeVal: string | null;
+              renamedSomeOtherVal: string | null;
+              renamedArrayVal: string | null;
+              renamedNullableVal: string | null;
+              renamedNullableArrayVal: string | null;
+            }[];
+          }
+        >
+      >();
     });
   });
 });
