@@ -4,7 +4,7 @@ SPDX-License-Identifier: Apache-2.0
 */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Simplify, UnionToIntersection } from 'type-fest';
+import { IsAny, Simplify, UnionToIntersection } from 'type-fest';
 
 import { Query } from './query';
 
@@ -401,25 +401,29 @@ type ExtractLeaf<P> = P extends `${string}->>${infer Col}` ? Col : never;
  *
  * @typeParam P - path ending with `->>` with optional `->` in between
  * @typeParam O - object possibly containing the path
- * @typeParam L - leaf key in recursive calls
+ * @typeParam N - `null` that needs to be caried recursively
+ * if any of the parents could be `null`.
+ * It should be left empty in initial call.
  */
 type ExtractObj<
   P extends string,
   O extends Record<string, any>,
-  L extends keyof O = never,
-> = keyof O extends string
-  ? P extends `${infer P}->>${infer LL}`
-    ? P extends `${infer Col}->${infer PP}`
-      ? ExtractObj<PP, O[Col], LL>
-      : keyof O[P] extends string
-        ? string
-        : string | null
-    : P extends `${infer Col}->${infer PP}`
-      ? PP extends `${string}->${string}`
-        ? ExtractObj<PP, O[Col], L>
-        : string
-      : string
-  : string | null;
+  N extends null | never = never,
+> = P extends `>${infer LL}`
+  ? IsAny<O[LL]> extends true
+    ? string | null
+    : O[LL] extends never
+      ? string | null
+      : string | N
+  : P extends `${infer Col}->${infer PP}`
+    ? O[Col] extends Array<any>
+      ? string | null
+      : ExtractObj<
+          PP,
+          O[Col],
+          O[Col] extends NonNullable<O[Col]> ? never : null
+        >
+    : never;
 
 type CompositeStringFilterReturn<
   DB extends BaseDB,
