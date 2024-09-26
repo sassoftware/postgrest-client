@@ -423,7 +423,7 @@ type ExtractObj<
           O[Col],
           O[Col] extends NonNullable<O[Col]> ? never : null
         >
-    : 'here';
+    : never;
 
 type CompositeStringFilterReturn<
   DB extends BaseDB,
