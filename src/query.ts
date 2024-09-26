@@ -54,7 +54,7 @@ type ObjPaths<T> = T extends EmptyObject
     ? {
         [K in keyof T]: K extends string
           ? T[K] extends object
-            ? `${K}.${ObjPaths<T[K]>}`
+            ? `${K}.${ObjPaths<T[K]>}` | `${K}->${ObjPaths<T[K]>}`
             : K
           : never;
       }[keyof T]
