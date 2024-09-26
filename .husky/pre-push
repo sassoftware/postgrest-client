@@ -12,4 +12,5 @@ git diff HEAD --quiet || {
 npm run lint;
 npm run format:check;
 npm run circular-deps;
+npm run typecheck;
 npm run test:ci -- --coverage;
