@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## [v0.7.1](https://github.com/sassoftware/postgrest-client/releases/tag/v0.7.1) 2024-09-27
+
+- [fae09a8](https://github.com/sassoftware/postgrest-client/commit/fae09a87782db1fe2cfd9211123842aab686d11b) fix: edge cases for nullable json types ([#26](https://github.com/sassoftware/postgrest-client/issues/26))
+- [c3d3420](https://github.com/sassoftware/postgrest-client/commit/c3d34202cb66bd6ebda4b6a010a9fc83d9d4d4e4) fix: json order regression ([#27](https://github.com/sassoftware/postgrest-client/issues/27))
+- [326152f](https://github.com/sassoftware/postgrest-client/commit/326152f009f9c329445cae352a7c320bfe435f86) fix: string | null when JSON type is unknown ([#20](https://github.com/sassoftware/postgrest-client/issues/20))
+
 ## [v0.7.0](https://github.com/sassoftware/postgrest-client/releases/tag/v0.7.0) - 2024-06-03
 
 - [`eb2948d`](https://github.com/sassoftware/postgrest-client/commit/eb2948d303d735d25daca4f414bd3733d2bb92d0) feat: top level ordering (#14)
