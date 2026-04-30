@@ -252,8 +252,9 @@ describe.each([
         status: 404,
         statusText: 'Not Found',
         data: {
-          code: '42P01',
-          message: 'relation "api.non-existing" does not exist',
+          code: 'PGRST205',
+          message:
+            "Could not find the table 'api.non-existing' in the schema cache",
         },
       });
     });
