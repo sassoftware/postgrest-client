@@ -497,6 +497,35 @@ type CompositeStringFilterWithModifierReturn<
             >
     : never;
 
+type VerticalFilterSelection<
+  DB extends BaseDB,
+  TableName extends keyof DB,
+  Selector,
+> =
+  Selector extends VerticalColumnFilterWithModifier<DB, TableName>
+    ? Selector
+    : Selector extends VerticalEmbeddedFilterWithModifier<DB>
+      ? Selector
+      : Selector extends CompositeStringFilterWithModifier<DB, TableName>
+        ? Selector
+        : Selector extends ReadonlyArray<infer S>
+          ? S
+          : Selector;
+
+type VerticalSelectorReturn<
+  DB extends BaseDB,
+  TableName extends keyof DB,
+  R extends object | '*' | null,
+  Selector,
+> =
+  | VerticalAllFilterReturn<Selector>
+  | VerticalColumnFilterReturn<DB, TableName, R, Selector>
+  | VerticalColumnFilterWithModifiersReturn<DB, TableName, R, Selector>
+  | CompositeStringFilterReturn<DB, TableName, R, Selector>
+  | CompositeStringFilterWithModifierReturn<DB, TableName, R, Selector>
+  | VerticalEmbeddedFilterReturn<DB, TableName, R, Selector>
+  | VerticalEmbeddedFilterWithModifierReturn<DB, TableName, R, Selector>;
+
 /**
  * Takes Query generics (variables), as well as selectors, and transforms them
  * to another Query with different return generic (R).
@@ -515,44 +544,12 @@ export type VerticalFilterReturn<
   DB,
   TableName,
   C,
-  Selector extends VerticalColumnFilterWithModifier<DB, TableName>
-    ? VerticalColumnFilterWithModifiersReturn<DB, TableName, R, Selector>
-    : Selector extends VerticalEmbeddedFilterWithModifier<DB>
-      ? VerticalEmbeddedFilterWithModifierReturn<DB, TableName, R, Selector>
-      : Selector extends CompositeStringFilterWithModifier<DB, TableName>
-        ? CompositeStringFilterWithModifierReturn<DB, TableName, R, Selector>
-        : Selector extends ReadonlyArray<infer S>
-          ?
-              | VerticalAllFilterReturn<S>
-              | VerticalColumnFilterReturn<DB, TableName, R, S>
-              | VerticalColumnFilterWithModifiersReturn<DB, TableName, R, S>
-              | CompositeStringFilterReturn<DB, TableName, R, S>
-              | CompositeStringFilterWithModifierReturn<DB, TableName, R, S>
-              | VerticalEmbeddedFilterReturn<DB, TableName, R, S>
-              | VerticalEmbeddedFilterWithModifierReturn<DB, TableName, R, S>
-          :
-              | VerticalAllFilterReturn<Selector>
-              | VerticalColumnFilterReturn<DB, TableName, R, Selector>
-              | VerticalColumnFilterWithModifiersReturn<
-                  DB,
-                  TableName,
-                  R,
-                  Selector
-                >
-              | CompositeStringFilterReturn<DB, TableName, R, Selector>
-              | CompositeStringFilterWithModifierReturn<
-                  DB,
-                  TableName,
-                  R,
-                  Selector
-                >
-              | VerticalEmbeddedFilterReturn<DB, TableName, R, Selector>
-              | VerticalEmbeddedFilterWithModifierReturn<
-                  DB,
-                  TableName,
-                  R,
-                  Selector
-                >,
+  VerticalSelectorReturn<
+    DB,
+    TableName,
+    R,
+    VerticalFilterSelection<DB, TableName, Selector>
+  >,
   H,
   M,
   Simplify<
