@@ -666,16 +666,14 @@ type MutationQueryToResponse<
   Q,
 > =
   Q extends Query<any, any, infer C, any, infer H>
-    ? H['returning'] extends 'headers-only'
-      ? Method extends 'POST'
-        ? { location: string } & CountMetadata<Method, Q>
-        : Method extends 'PUT'
-          ? object
-          : CountMetadata<Method, Q>
-      : (H['returning'] extends 'representation'
+    ? (H['returning'] extends 'headers-only'
+        ? Method extends 'POST'
+          ? { location: string }
+          : object
+        : H['returning'] extends 'representation'
           ? RowsByCardinality<C, Q>
           : object) &
-          (Method extends 'PUT' ? object : CountMetadata<Method, Q>)
+        (Method extends 'PUT' ? object : CountMetadata<Method, Q>)
     : never;
 
 export type PostQueryToResponse<Q> = MutationQueryToResponse<'POST', Q>;
