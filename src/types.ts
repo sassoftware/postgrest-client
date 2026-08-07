@@ -645,8 +645,9 @@ type RowsByCardinality<C extends Cardinality, Q> = C extends 'one'
  */
 export type GetQueryToResponse<Q> =
   Q extends Query<any, any, infer C>
-    ? RowsByCardinality<C, Q> &
-        (C extends 'one' ? object : CountMetadata<'GET', Q>)
+    ? C extends 'one'
+      ? RowsByCardinality<C, Q>
+      : RowsByCardinality<C, Q> & CountMetadata<'GET', Q>
     : never;
 
 export type PostRequestData<Q> =
