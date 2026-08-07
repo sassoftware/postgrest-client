@@ -76,6 +76,19 @@ describe.each([
       expect(status).toBeTypeOf('number');
       expect(statusText).toBeTypeOf('string');
     });
+
+    it('single with count', async () => {
+      const { headers, status, statusText, pagesLength, totalLength } =
+        await pgClient.head({
+          query: pgClient.query('actors').eq('id', 1).count('exact').single(),
+        });
+      expect(headers).toBeInstanceOf(Headers);
+      expect(status).toBeTypeOf('number');
+      expect(statusText).toBeTypeOf('string');
+      expect(pagesLength).toBeTypeOf('number');
+      expect(totalLength).toBeTypeOf('number');
+      expect(totalLength).toBe(1);
+    });
   });
 
   describe('post', () => {
@@ -120,6 +133,24 @@ describe.each([
       expect(row).toBeTypeOf('object');
     });
 
+    it('with single return and count', async () => {
+      const { headers, status, statusText, row, totalLength } =
+        await pgClient.post({
+          query: pgClient
+            .query('directors')
+            .returning('representation')
+            .count('exact')
+            .single(),
+          data: { first_name: 'Stanley', last_name: 'Kubrick' },
+        });
+      expect(headers).toBeInstanceOf(Headers);
+      expect(status).toBeTypeOf('number');
+      expect(statusText).toBeTypeOf('string');
+      expect(row).toBeTypeOf('object');
+      expect(totalLength).toBeTypeOf('number');
+      expect(totalLength).toBe(1);
+    });
+
     it('with pagination', async () => {
       const { headers, status, statusText, rows, totalLength } =
         await pgClient.post({
@@ -151,6 +182,7 @@ describe.each([
       expect(statusText).toBeTypeOf('string');
       expect(row).toBeTypeOf('object');
       expect(totalLength).toBeTypeOf('number');
+      expect(totalLength).toBe(1);
     });
   });
 
@@ -243,6 +275,7 @@ describe.each([
       expect(statusText).toBeTypeOf('string');
       expect(row).toBeTypeOf('object');
       expect(totalLength).toBeTypeOf('number');
+      expect(totalLength).toBe(1);
     });
   });
 
@@ -303,7 +336,15 @@ describe.each([
     });
 
     it('with pagination', async () => {
-      const { headers, status, statusText, rows } = await pgClient.put({
+      const {
+        headers,
+        status,
+        statusText,
+        rows,
+        // @ts-expect-error - totalLength should not be present
+        // The parameter is ignored by PostgREST in case of PUT
+        totalLength,
+      } = await pgClient.put({
         query: pgClient
           .query('directors')
           .eq('id', actor.id)
@@ -315,10 +356,19 @@ describe.each([
       expect(rows).instanceOf(Array);
       expect(status).toBeTypeOf('number');
       expect(statusText).toBeTypeOf('string');
+      expect(totalLength).toBeTypeOf('undefined');
     });
 
     it('with single return and pagination', async () => {
-      const { headers, status, statusText, row } = await pgClient.put({
+      const {
+        headers,
+        status,
+        statusText,
+        row,
+        // @ts-expect-error - totalLength should not be present
+        // The parameter is ignored by PostgREST in case of PUT
+        totalLength,
+      } = await pgClient.put({
         query: pgClient
           .query('directors')
           .eq('id', actor.id)
@@ -331,6 +381,7 @@ describe.each([
       expect(status).toBeTypeOf('number');
       expect(statusText).toBeTypeOf('string');
       expect(row).toBeTypeOf('object');
+      expect(totalLength).toBeTypeOf('undefined');
     });
   });
 
@@ -412,6 +463,7 @@ describe.each([
       expect(statusText).toBeTypeOf('string');
       expect(row).toBeTypeOf('object');
       expect(totalLength).toBeTypeOf('number');
+      expect(totalLength).toBe(1);
     });
   });
 });

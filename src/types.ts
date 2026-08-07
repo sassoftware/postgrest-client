@@ -497,6 +497,35 @@ type CompositeStringFilterWithModifierReturn<
             >
     : never;
 
+type VerticalFilterSelection<
+  DB extends BaseDB,
+  TableName extends keyof DB,
+  Selector,
+> =
+  Selector extends VerticalColumnFilterWithModifier<DB, TableName>
+    ? Selector
+    : Selector extends VerticalEmbeddedFilterWithModifier<DB>
+      ? Selector
+      : Selector extends CompositeStringFilterWithModifier<DB, TableName>
+        ? Selector
+        : Selector extends ReadonlyArray<infer S>
+          ? S
+          : Selector;
+
+type VerticalSelectorReturn<
+  DB extends BaseDB,
+  TableName extends keyof DB,
+  R extends object | '*' | null,
+  Selector,
+> =
+  | VerticalAllFilterReturn<Selector>
+  | VerticalColumnFilterReturn<DB, TableName, R, Selector>
+  | VerticalColumnFilterWithModifiersReturn<DB, TableName, R, Selector>
+  | CompositeStringFilterReturn<DB, TableName, R, Selector>
+  | CompositeStringFilterWithModifierReturn<DB, TableName, R, Selector>
+  | VerticalEmbeddedFilterReturn<DB, TableName, R, Selector>
+  | VerticalEmbeddedFilterWithModifierReturn<DB, TableName, R, Selector>;
+
 /**
  * Takes Query generics (variables), as well as selectors, and transforms them
  * to another Query with different return generic (R).
@@ -515,44 +544,12 @@ export type VerticalFilterReturn<
   DB,
   TableName,
   C,
-  Selector extends VerticalColumnFilterWithModifier<DB, TableName>
-    ? VerticalColumnFilterWithModifiersReturn<DB, TableName, R, Selector>
-    : Selector extends VerticalEmbeddedFilterWithModifier<DB>
-      ? VerticalEmbeddedFilterWithModifierReturn<DB, TableName, R, Selector>
-      : Selector extends CompositeStringFilterWithModifier<DB, TableName>
-        ? CompositeStringFilterWithModifierReturn<DB, TableName, R, Selector>
-        : Selector extends ReadonlyArray<infer S>
-          ?
-              | VerticalAllFilterReturn<S>
-              | VerticalColumnFilterReturn<DB, TableName, R, S>
-              | VerticalColumnFilterWithModifiersReturn<DB, TableName, R, S>
-              | CompositeStringFilterReturn<DB, TableName, R, S>
-              | CompositeStringFilterWithModifierReturn<DB, TableName, R, S>
-              | VerticalEmbeddedFilterReturn<DB, TableName, R, S>
-              | VerticalEmbeddedFilterWithModifierReturn<DB, TableName, R, S>
-          :
-              | VerticalAllFilterReturn<Selector>
-              | VerticalColumnFilterReturn<DB, TableName, R, Selector>
-              | VerticalColumnFilterWithModifiersReturn<
-                  DB,
-                  TableName,
-                  R,
-                  Selector
-                >
-              | CompositeStringFilterReturn<DB, TableName, R, Selector>
-              | CompositeStringFilterWithModifierReturn<
-                  DB,
-                  TableName,
-                  R,
-                  Selector
-                >
-              | VerticalEmbeddedFilterReturn<DB, TableName, R, Selector>
-              | VerticalEmbeddedFilterWithModifierReturn<
-                  DB,
-                  TableName,
-                  R,
-                  Selector
-                >,
+  VerticalSelectorReturn<
+    DB,
+    TableName,
+    R,
+    VerticalFilterSelection<DB, TableName, Selector>
+  >,
   H,
   M,
   Simplify<
@@ -638,6 +635,10 @@ export type CountMetadata<Method extends HttpMethod, Q> =
       : object
     : object;
 
+type RowsByCardinality<C extends Cardinality, Q> = C extends 'one'
+  ? { row: RowType<Q> }
+  : { rows: RowType<Q>[] };
+
 /**
  * Utility type to transform Query into a result.
  * It should return different types based on Query generics.
@@ -645,8 +646,8 @@ export type CountMetadata<Method extends HttpMethod, Q> =
 export type GetQueryToResponse<Q> =
   Q extends Query<any, any, infer C>
     ? C extends 'one'
-      ? { row: RowType<Q> }
-      : { rows: RowType<Q>[] } & CountMetadata<'GET', Q>
+      ? RowsByCardinality<C, Q>
+      : RowsByCardinality<C, Q> & CountMetadata<'GET', Q>
     : never;
 
 export type PostRequestData<Q> =
@@ -660,46 +661,22 @@ export type PatchRequestData<Q> =
 export type PutRequestData<Q> =
   Q extends Query<infer DB, infer TN> ? DB[TN]['put'] : never;
 
-export type PostQueryToResponse<Q> =
+type MutationQueryToResponse<
+  Method extends 'POST' | 'PATCH' | 'PUT' | 'DELETE',
+  Q,
+> =
   Q extends Query<any, any, infer C, any, infer H>
-    ? H['returning'] extends 'headers-only'
-      ? { location: string } & CountMetadata<'POST', Q>
-      : H['returning'] extends 'representation'
-        ? C extends 'one'
-          ? { row: RowType<Q> } & CountMetadata<'POST', Q>
-          : { rows: RowType<Q>[] } & CountMetadata<'POST', Q>
-        : CountMetadata<'POST', Q>
+    ? (H['returning'] extends 'headers-only'
+        ? Method extends 'POST'
+          ? { location: string }
+          : object
+        : H['returning'] extends 'representation'
+          ? RowsByCardinality<C, Q>
+          : object) &
+        (Method extends 'PUT' ? object : CountMetadata<Method, Q>)
     : never;
 
-export type PatchQueryToResponse<Q> =
-  Q extends Query<any, any, infer C, any, infer H>
-    ? H['returning'] extends 'headers-only'
-      ? CountMetadata<'PATCH', Q>
-      : H['returning'] extends 'representation'
-        ? C extends 'one'
-          ? { row: RowType<Q> } & CountMetadata<'PATCH', Q>
-          : { rows: RowType<Q>[] } & CountMetadata<'PATCH', Q>
-        : CountMetadata<'PATCH', Q>
-    : never;
-
-export type PutQueryToResponse<Q> =
-  Q extends Query<any, any, infer C, any, infer H>
-    ? H['returning'] extends 'headers-only'
-      ? object
-      : H['returning'] extends 'representation'
-        ? C extends 'one'
-          ? { row: RowType<Q> }
-          : { rows: RowType<Q>[] }
-        : object
-    : never;
-
-export type DeleteQueryToResponse<Q> =
-  Q extends Query<any, any, infer C, any, infer H>
-    ? H['returning'] extends 'headers-only'
-      ? CountMetadata<'DELETE', Q>
-      : H['returning'] extends 'representation'
-        ? C extends 'one'
-          ? { row: RowType<Q> } & CountMetadata<'DELETE', Q>
-          : { rows: RowType<Q>[] } & CountMetadata<'DELETE', Q>
-        : CountMetadata<'DELETE', Q>
-    : never;
+export type PostQueryToResponse<Q> = MutationQueryToResponse<'POST', Q>;
+export type PatchQueryToResponse<Q> = MutationQueryToResponse<'PATCH', Q>;
+export type PutQueryToResponse<Q> = MutationQueryToResponse<'PUT', Q>;
+export type DeleteQueryToResponse<Q> = MutationQueryToResponse<'DELETE', Q>;
