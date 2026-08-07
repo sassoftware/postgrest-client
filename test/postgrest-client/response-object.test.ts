@@ -78,9 +78,10 @@ describe.each([
     });
 
     it('single with count', async () => {
-      const { headers, status, statusText, pagesLength, totalLength } = await pgClient.head({
-        query: pgClient.query('actors').eq('id', 1).count('exact').single(),
-      });
+      const { headers, status, statusText, pagesLength, totalLength } =
+        await pgClient.head({
+          query: pgClient.query('actors').eq('id', 1).count('exact').single(),
+        });
       expect(headers).toBeInstanceOf(Headers);
       expect(status).toBeTypeOf('number');
       expect(statusText).toBeTypeOf('string');
@@ -133,10 +134,15 @@ describe.each([
     });
 
     it('with single return and count', async () => {
-      const { headers, status, statusText, row, totalLength } = await pgClient.post({
-        query: pgClient.query('directors').returning('representation').count('exact').single(),
-        data: { first_name: 'Stanley', last_name: 'Kubrick' },
-      });
+      const { headers, status, statusText, row, totalLength } =
+        await pgClient.post({
+          query: pgClient
+            .query('directors')
+            .returning('representation')
+            .count('exact')
+            .single(),
+          data: { first_name: 'Stanley', last_name: 'Kubrick' },
+        });
       expect(headers).toBeInstanceOf(Headers);
       expect(status).toBeTypeOf('number');
       expect(statusText).toBeTypeOf('string');
