@@ -1,5 +1,5 @@
-import axios from 'axios';
-import { describe, expect, it } from 'vitest';
+import axios, { Axios, AxiosHeaders } from 'axios';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Equals, assert } from 'tsafe';
 
 import {
@@ -959,18 +959,90 @@ describe('reqOptions', () => {
       // @ts-expect-error responseType is an Axios option, not a valid RequestInit property
       pgClient.get({ query }, { responseType: 'json' });
     });
+
+    it('headers object', async () => {
+      const fetchSpy = vi.spyOn(global, 'fetch');
+      const query = pgClient.query('actors');
+      await pgClient.get({ query }, { headers: { 'my-header': 'value' } });
+      const headers = new Headers(fetchSpy.mock.calls[0][1]!.headers);
+      expect(Array.from(headers?.entries())).toContainEqual([
+        'my-header',
+        'value',
+      ]);
+    });
+
+    it('headers instance', async () => {
+      const fetchSpy = vi.spyOn(global, 'fetch');
+      const query = pgClient.query('actors');
+      await pgClient.get(
+        { query },
+        { headers: new Headers({ 'my-header': 'value' }) },
+      );
+      const headers = new Headers(fetchSpy.mock.calls[0][1]!.headers);
+      expect(Array.from(headers?.entries())).toContainEqual([
+        'my-header',
+        'value',
+      ]);
+    });
   });
 
   describe('axios', () => {
+    const axiosSpy = vi.spyOn(Axios.prototype, 'get');
     const pgClient = new PostgrestClient<DB, 'axios'>({
       base: BASE_URL,
       axiosInstance: axios.create(),
+    });
+
+    afterEach(() => {
+      axiosSpy.mockClear();
     });
 
     it('rejects fetch-specific options at compile time', () => {
       const query = pgClient.query('actors');
       // @ts-expect-error mode is a fetch RequestInit option, not valid for AxiosRequestConfig
       pgClient.get({ query }, { mode: 'cors' });
+    });
+
+    it('headers object', async () => {
+      const query = pgClient.query('actors');
+      await pgClient.get({ query }, { headers: { 'my-header': 'value' } });
+      const headers = new Headers(
+        axiosSpy.mock.calls[0][1]!.headers as Record<string, string>,
+      );
+      expect(Array.from(headers?.entries())).toContainEqual([
+        'my-header',
+        'value',
+      ]);
+    });
+
+    it('headers instance', async () => {
+      const query = pgClient.query('actors');
+      await pgClient.get(
+        { query },
+        { headers: new AxiosHeaders({ 'my-header': 'value' }) },
+      );
+      const headers = new Headers(
+        axiosSpy.mock.calls[0][1]!.headers as Record<string, string>,
+      );
+      expect(Array.from(headers?.entries())).toContainEqual([
+        'my-header',
+        'value',
+      ]);
+    });
+
+    it('headers axios headers instance', async () => {
+      const query = pgClient.query('actors');
+      await pgClient.get(
+        { query },
+        { headers: new AxiosHeaders({ 'my-header': 'value' }) },
+      );
+      const headers = new Headers(
+        axiosSpy.mock.calls[0][1]!.headers as Record<string, string>,
+      );
+      expect(Array.from(headers?.entries())).toContainEqual([
+        'my-header',
+        'value',
+      ]);
     });
   });
 });
