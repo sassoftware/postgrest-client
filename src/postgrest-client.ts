@@ -3,7 +3,7 @@ Copyright © 2023, SAS Institute Inc., Cary, NC, USA.  All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-import { AxiosInstance, AxiosError } from 'axios';
+import { AxiosInstance, AxiosError, type AxiosRequestConfig } from 'axios';
 
 import { Query, type QueryDataObject } from './query';
 import type {
@@ -81,7 +81,7 @@ export type QueryResponseDelete<Q extends Query<any, any>> =
 const isAxiosError = (err: unknown): err is AxiosError =>
   (err as AxiosError).isAxiosError === true;
 
-type PostgrestClientConfig = {
+type PostgrestClientConfigBase = {
   /**
    * Absolute base URL.
    * It could be path only or a URL with domain
@@ -92,10 +92,6 @@ type PostgrestClientConfig = {
    * base: 'https://example.com/api'
    */
   base: string;
-  axiosInstance?: Pick<
-    AxiosInstance,
-    'get' | 'head' | 'post' | 'patch' | 'put' | 'delete'
-  >;
   /**
    * Sets URL encoding to enabled/disabled.
    * Disabling encoding could help with debugging and provide better readability.
@@ -105,19 +101,29 @@ type PostgrestClientConfig = {
   encodeQueryStrings?: boolean;
 };
 
+type PostgrestClientConfig = PostgrestClientConfigBase & {
+  axiosInstance?: never;
+};
+
+type PostgrestClientConfigAxios = PostgrestClientConfigBase & {
+  axiosInstance: AxiosInstance;
+};
+
 /**
  * Type-safe PostgREST client.
  */
-export class PostgrestClient<DB extends BaseDB | never> {
-  #base: PostgrestClientConfig['base'];
-  #encodeQueryStrings: PostgrestClientConfig['encodeQueryStrings'];
-  #axiosInstance?: PostgrestClientConfig['axiosInstance'];
+export class PostgrestClient<
+  DB extends BaseDB | never,
+  T extends PostgrestClientConfig | PostgrestClientConfigAxios =
+    | PostgrestClientConfig
+    | PostgrestClientConfigAxios,
+> {
+  #base: PostgrestClientConfigBase['base'];
+  #encodeQueryStrings: PostgrestClientConfigBase['encodeQueryStrings'];
+  #axiosInstance?: AxiosInstance;
 
-  constructor({
-    base,
-    axiosInstance,
-    encodeQueryStrings,
-  }: PostgrestClientConfig) {
+  constructor(config: T) {
+    const { base, axiosInstance, encodeQueryStrings } = config;
     /* c8 ignore next 3 */
     if (!this.#axiosInstance && typeof fetch !== 'function') {
       throw new Error('Neither Axios is provided nor "fetch" is available!');
@@ -286,16 +292,26 @@ export class PostgrestClient<DB extends BaseDB | never> {
       resolution,
       missing,
     }: QueryDataObject<DB, keyof DB>,
-    requestHeadersArg?: Headers,
+    requestHeadersArg?: HeadersInit | AxiosRequestConfig['headers'],
   ): Headers {
     const headers = new Headers({
       Accept: 'application/json',
       'Content-Type': 'application/json',
     });
 
-    requestHeadersArg?.forEach((value, key) => {
-      headers.append(key, value);
-    });
+    if (requestHeadersArg instanceof Headers) {
+      requestHeadersArg.forEach((value, key) => {
+        headers.append(key, value);
+      });
+    } else if (Array.isArray(requestHeadersArg)) {
+      requestHeadersArg.forEach(([key, value]) => {
+        headers.append(key, value);
+      });
+    } else if (requestHeadersArg) {
+      Object.entries(requestHeadersArg).forEach(([key, value]) => {
+        headers.append(key, value);
+      });
+    }
 
     if (cardinality === 'one') {
       headers.set('Accept', 'application/vnd.pgrst.object+json');
@@ -477,17 +493,19 @@ export class PostgrestClient<DB extends BaseDB | never> {
    * const { status, statusText, headers, row } = await pgClient.delete({ query });
    * ```
    */
-  async get<Q extends Query<DB, keyof DB>>({
-    query,
-    headers: requestHeadersArg,
-  }: {
-    query: Q;
-    headers?: Headers;
-  }): Promise<QueryResponseGet<Q>> {
+  async get<Q extends Query<DB, keyof DB>>(
+    { query }: { query: Q },
+    reqOptions?: T extends PostgrestClientConfigAxios
+      ? AxiosRequestConfig
+      : RequestInit,
+  ): Promise<QueryResponseGet<Q>> {
     const queryObj = query.toObject();
     const { tableName, cardinality } = queryObj;
     const url = this.#getRequestUrl(tableName, query);
-    const requestHeaders = this.#getRequestHeaders(queryObj, requestHeadersArg);
+    const requestHeaders = this.#getRequestHeaders(
+      queryObj,
+      reqOptions?.headers,
+    );
 
     if (this.#axiosInstance) {
       try {
@@ -497,6 +515,7 @@ export class PostgrestClient<DB extends BaseDB | never> {
           status,
           statusText,
         } = await this.#axiosInstance.get(url, {
+          ...(reqOptions as AxiosRequestConfig),
           headers: Object.fromEntries(requestHeaders),
         });
 
@@ -544,7 +563,10 @@ export class PostgrestClient<DB extends BaseDB | never> {
       }
     }
 
-    const fetchResponse = await fetch(url, { headers: requestHeaders });
+    const fetchResponse = await fetch(url, {
+      ...(reqOptions as RequestInit),
+      headers: requestHeaders,
+    });
     const data = await fetchResponse.json();
     const { headers, status, statusText, ok } = fetchResponse;
     const response = this.#transformResponse({
@@ -945,5 +967,5 @@ export class PostgrestClient<DB extends BaseDB | never> {
  * @returns instance of PostgrestClient class
  */
 export const createClient = <DB extends BaseDB>(
-  config: PostgrestClientConfig,
+  config: PostgrestClientConfig | PostgrestClientConfigAxios,
 ) => new PostgrestClient<DB>(config);

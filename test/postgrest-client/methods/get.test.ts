@@ -92,7 +92,7 @@ describe.each([
     const query = pgClient.query('actors');
     const headers = new Headers({ Prefer: 'count=exact' });
     // @ts-expect-error expected wrong type
-    const { totalLength } = await pgClient.get({ query, headers });
+    const { totalLength } = await pgClient.get({ query }, { headers });
     expect(totalLength).toBeTypeOf('number');
   });
 
