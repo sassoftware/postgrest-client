@@ -114,15 +114,19 @@ type PostgrestClientConfigAxios = PostgrestClientConfigBase & {
  */
 export class PostgrestClient<
   DB extends BaseDB | never,
-  T extends PostgrestClientConfig | PostgrestClientConfigAxios =
-    | PostgrestClientConfig
-    | PostgrestClientConfigAxios,
+  T extends 'axios' | 'fetch' = 'fetch',
 > {
   #base: PostgrestClientConfigBase['base'];
   #encodeQueryStrings: PostgrestClientConfigBase['encodeQueryStrings'];
   #axiosInstance?: AxiosInstance;
 
-  constructor(config: T) {
+  constructor(
+    config: T extends 'axios'
+      ? PostgrestClientConfigAxios
+      : T extends 'fetch'
+        ? PostgrestClientConfig
+        : never,
+  ) {
     const { base, axiosInstance, encodeQueryStrings } = config;
     /* c8 ignore next 3 */
     if (!this.#axiosInstance && typeof fetch !== 'function') {
@@ -495,9 +499,11 @@ export class PostgrestClient<
    */
   async get<Q extends Query<DB, keyof DB>>(
     { query }: { query: Q },
-    reqOptions?: T extends PostgrestClientConfigAxios
+    reqOptions?: T extends 'axios'
       ? AxiosRequestConfig
-      : RequestInit,
+      : T extends 'fetch'
+        ? RequestInit
+        : never,
   ): Promise<QueryResponseGet<Q>> {
     const queryObj = query.toObject();
     const { tableName, cardinality } = queryObj;
@@ -966,6 +972,13 @@ export class PostgrestClient<
  * @param config The same config object as accepted by PostgrestClient constructor.
  * @returns instance of PostgrestClient class
  */
-export const createClient = <DB extends BaseDB>(
-  config: PostgrestClientConfig | PostgrestClientConfigAxios,
-) => new PostgrestClient<DB>(config);
+export const createClient = <
+  DB extends BaseDB,
+  T extends 'axios' | 'fetch' = 'fetch',
+>(
+  config: T extends 'axios'
+    ? PostgrestClientConfigAxios
+    : T extends 'fetch'
+      ? PostgrestClientConfig
+      : never,
+) => new PostgrestClient<DB, T>(config);

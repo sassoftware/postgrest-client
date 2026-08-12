@@ -10,7 +10,9 @@ describe.each([
   ['fetch', undefined],
   ['axios', axios.create()],
 ])('%s', (_name, axiosInstance) => {
-  const pgClient = new PostgrestClient<DB>({ base: BASE_URL, axiosInstance });
+  const pgClient = axiosInstance
+    ? new PostgrestClient<DB, 'axios'>({ base: BASE_URL, axiosInstance })
+    : new PostgrestClient<DB>({ base: BASE_URL });
 
   it('insert then delete', async () => {
     const { row } = await pgClient.post({
