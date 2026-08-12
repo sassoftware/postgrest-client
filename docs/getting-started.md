@@ -112,7 +112,8 @@ or in case Axios is used for fetching data:
 ```ts
 const pgClient = new PostgrestClient<DB, 'axios'>({
   base: '/api',
-  // note that both this property and 'axios' class generic should be added.
+  // note that both `axiosInstance` property,
+  // and 'axios' class generic should be added.
   // The reason is to avoid mixing axios and fetch options in .get, .post, etc.
   axiosInstance: axios.create(),
   encodeQueryStrings: false,
