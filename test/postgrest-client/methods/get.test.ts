@@ -923,12 +923,17 @@ describe.each([
 });
 
 describe('reqOptions', () => {
-  describe('fetch', () => {
-    const fetchClient = new PostgrestClient<DB>({ base: BASE_URL });
+  describe.each([
+    ['fetch', undefined],
+    ['axios', axios.create()],
+  ])('%s', (_name, axiosInstance) => {
+    const pgClient = axiosInstance
+      ? new PostgrestClient<DB, 'axios'>({ base: BASE_URL, axiosInstance })
+      : new PostgrestClient<DB>({ base: BASE_URL });
 
     it('passes custom headers', async () => {
-      const query = fetchClient.query('actors').count('exact');
-      const { rows, totalLength } = await fetchClient.get(
+      const query = pgClient.query('actors').count('exact');
+      const { rows, totalLength } = await pgClient.get(
         { query },
         { headers: { 'X-Custom-Header': 'test' } },
       );
@@ -939,48 +944,33 @@ describe('reqOptions', () => {
     it('aborted request throws', async () => {
       const controller = new AbortController();
       controller.abort();
-      const query = fetchClient.query('actors');
+      const query = pgClient.query('actors');
       await expect(
-        fetchClient.get({ query }, { signal: controller.signal }),
+        pgClient.get({ query }, { signal: controller.signal }),
       ).rejects.toThrow();
     });
+  });
+
+  describe('fetch', () => {
+    const pgClient = new PostgrestClient<DB>({ base: BASE_URL });
 
     it('rejects axios-specific options at compile time', () => {
-      const query = fetchClient.query('actors');
+      const query = pgClient.query('actors');
       // @ts-expect-error responseType is an Axios option, not a valid RequestInit property
-      fetchClient.get({ query }, { responseType: 'json' });
+      pgClient.get({ query }, { responseType: 'json' });
     });
   });
 
   describe('axios', () => {
-    const axiosClient = new PostgrestClient<DB, 'axios'>({
+    const pgClient = new PostgrestClient<DB, 'axios'>({
       base: BASE_URL,
       axiosInstance: axios.create(),
     });
 
-    it('passes custom headers', async () => {
-      const query = axiosClient.query('actors').count('exact');
-      const { rows, totalLength } = await axiosClient.get(
-        { query },
-        { headers: { 'X-Custom-Header': 'test' } },
-      );
-      expect(rows).toBeInstanceOf(Array);
-      expect(totalLength).toBeTypeOf('number');
-    });
-
-    it('aborted request throws', async () => {
-      const controller = new AbortController();
-      controller.abort();
-      const query = axiosClient.query('actors');
-      await expect(
-        axiosClient.get({ query }, { signal: controller.signal }),
-      ).rejects.toThrow();
-    });
-
     it('rejects fetch-specific options at compile time', () => {
-      const query = axiosClient.query('actors');
+      const query = pgClient.query('actors');
       // @ts-expect-error mode is a fetch RequestInit option, not valid for AxiosRequestConfig
-      axiosClient.get({ query }, { mode: 'cors' });
+      pgClient.get({ query }, { mode: 'cors' });
     });
   });
 });
