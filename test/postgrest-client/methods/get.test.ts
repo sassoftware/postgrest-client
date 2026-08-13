@@ -999,8 +999,11 @@ describe('reqOptions', () => {
 
     it('rejects fetch-specific options at compile time', () => {
       const query = pgClient.query('actors');
-      // @ts-expect-error mode is a fetch RequestInit option, not valid for AxiosRequestConfig
-      pgClient.get({ query }, { mode: 'cors' });
+      pgClient.get(
+        { query },
+        // @ts-expect-error mode is a fetch RequestInit option, not valid for AxiosRequestConfig
+        { mode: 'cors' },
+      );
     });
 
     it('headers object', async () => {

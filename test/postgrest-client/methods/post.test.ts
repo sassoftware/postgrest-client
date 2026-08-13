@@ -1,5 +1,5 @@
-import axios from 'axios';
-import { describe, expect, it } from 'vitest';
+import axios, { Axios, AxiosHeaders } from 'axios';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { Equals, assert } from 'tsafe';
 
 import { PostgrestClient } from '../../../src/postgrest-client';
@@ -135,7 +135,7 @@ describe.each([
 
     it('invalid column', async () => {
       const query = pgClient
-        .query('actors')
+        .query('foo')
         // @ts-expect-error testing an error
         .select('invalid')
         .returning('representation');
@@ -149,7 +149,7 @@ describe.each([
     });
 
     it('invalid payload', async () => {
-      const query = pgClient.query('actors');
+      const query = pgClient.query('foo');
       await expect(() =>
         // @ts-expect-error testing an error
         pgClient.post({ query, data: [{ invalid: 'invalid' }] }),
@@ -164,7 +164,7 @@ describe.each([
     });
 
     it('invalid payload (representation)', async () => {
-      const query = pgClient.query('actors').returning('representation');
+      const query = pgClient.query('foo').returning('representation');
       await expect(() =>
         // @ts-expect-error testing an error
         pgClient.post({ query, data: [{ invalid: 'invalid' }] }),
@@ -313,6 +313,143 @@ describe.each([
           message: 'All object keys must match',
         },
       });
+    });
+  });
+});
+
+describe('reqOptions', () => {
+  // the update object has all the same values as original.
+  const data = { bar: 'Added' };
+
+  afterAll(async () => {
+    const pgClient = new PostgrestClient<DB>({ base: BASE_URL });
+    await pgClient.delete({
+      query: pgClient.query('foo').eq('bar', 'Added'),
+    });
+  });
+
+  describe.each([
+    ['fetch', undefined],
+    ['axios', axios.create()],
+  ])('%s', (_name, axiosInstance) => {
+    const pgClient = axiosInstance
+      ? new PostgrestClient<DB, 'axios'>({ base: BASE_URL, axiosInstance })
+      : new PostgrestClient<DB>({ base: BASE_URL });
+
+    it('aborted request throws', async () => {
+      const controller = new AbortController();
+      controller.abort();
+      const query = pgClient.query('foo');
+      await expect(
+        pgClient.post({ query, data }, { signal: controller.signal }),
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('fetch', () => {
+    const pgClient = new PostgrestClient<DB>({ base: BASE_URL });
+
+    it('rejects axios-specific options at compile time', () => {
+      const query = pgClient.query('foo');
+      pgClient.post(
+        { query, data },
+        // @ts-expect-error responseType is an Axios option, not a valid RequestInit property
+        { responseType: 'json' },
+      );
+    });
+
+    it('headers object', async () => {
+      const fetchSpy = vi.spyOn(global, 'fetch');
+      const query = pgClient.query('foo');
+      await pgClient.post(
+        { query, data },
+        { headers: { 'my-header': 'value' } },
+      );
+      const headers = new Headers(fetchSpy.mock.calls[0][1]!.headers);
+      expect(Array.from(headers?.entries())).toContainEqual([
+        'my-header',
+        'value',
+      ]);
+    });
+
+    it('headers instance', async () => {
+      const fetchSpy = vi.spyOn(global, 'fetch');
+      const query = pgClient.query('foo');
+      await pgClient.post(
+        { query, data },
+        { headers: new Headers({ 'my-header': 'value' }) },
+      );
+      const headers = new Headers(fetchSpy.mock.calls[0][1]!.headers);
+      expect(Array.from(headers?.entries())).toContainEqual([
+        'my-header',
+        'value',
+      ]);
+    });
+  });
+
+  describe('axios', () => {
+    const axiosSpy = vi.spyOn(Axios.prototype, 'post');
+    const pgClient = new PostgrestClient<DB, 'axios'>({
+      base: BASE_URL,
+      axiosInstance: axios.create(),
+    });
+
+    afterEach(() => {
+      axiosSpy.mockClear();
+    });
+
+    it('rejects fetch-specific options at compile time', () => {
+      const query = pgClient.query('foo');
+      pgClient.post(
+        { query, data },
+        // @ts-expect-error mode is a fetch RequestInit option, not valid for AxiosRequestConfig
+        { mode: 'cors' },
+      );
+    });
+
+    it('headers object', async () => {
+      const query = pgClient.query('foo');
+      await pgClient.post(
+        { query, data },
+        { headers: { 'my-header': 'value' } },
+      );
+      const headers = new Headers(
+        axiosSpy.mock.calls[0][2]!.headers as Record<string, string>,
+      );
+      expect(Array.from(headers?.entries())).toContainEqual([
+        'my-header',
+        'value',
+      ]);
+    });
+
+    it('headers instance', async () => {
+      const query = pgClient.query('foo');
+      await pgClient.post(
+        { query, data },
+        { headers: new AxiosHeaders({ 'my-header': 'value' }) },
+      );
+      const headers = new Headers(
+        axiosSpy.mock.calls[0][2]!.headers as Record<string, string>,
+      );
+      expect(Array.from(headers?.entries())).toContainEqual([
+        'my-header',
+        'value',
+      ]);
+    });
+
+    it('headers axios headers instance', async () => {
+      const query = pgClient.query('foo');
+      await pgClient.post(
+        { query, data },
+        { headers: new AxiosHeaders({ 'my-header': 'value' }) },
+      );
+      const headers = new Headers(
+        axiosSpy.mock.calls[0][2]!.headers as Record<string, string>,
+      );
+      expect(Array.from(headers?.entries())).toContainEqual([
+        'my-header',
+        'value',
+      ]);
     });
   });
 });
