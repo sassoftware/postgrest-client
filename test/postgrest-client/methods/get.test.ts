@@ -510,9 +510,9 @@ describe.each([
           query: pgClient
             .query('films')
             .select('*')
+            // @ts-expect-error testing missing name
             .select([
               pgClient.embeddedQuery('directors', 'one').select('*'),
-              // @ts-expect-error testing missing name
               {},
             ]),
         }),

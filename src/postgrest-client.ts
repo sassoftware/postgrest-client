@@ -114,22 +114,22 @@ type PostgrestClientConfigAxios = PostgrestClientConfigBase & {
  */
 export class PostgrestClient<
   DB extends BaseDB | never,
-  T extends 'axios' | 'fetch' = 'fetch',
+  Client extends 'axios' | 'fetch' = 'fetch',
 > {
   #base: PostgrestClientConfigBase['base'];
   #encodeQueryStrings: PostgrestClientConfigBase['encodeQueryStrings'];
   #axiosInstance?: AxiosInstance;
 
   constructor(
-    config: T extends 'axios'
+    config: Client extends 'axios'
       ? PostgrestClientConfigAxios
-      : T extends 'fetch'
+      : Client extends 'fetch'
         ? PostgrestClientConfig
         : never,
   ) {
     const { base, axiosInstance, encodeQueryStrings } = config;
     /* c8 ignore next 3 */
-    if (!this.#axiosInstance && typeof fetch !== 'function') {
+    if (!axiosInstance && typeof fetch !== 'function') {
       throw new Error('Neither Axios is provided nor "fetch" is available!');
     }
 
@@ -499,9 +499,9 @@ export class PostgrestClient<
    */
   async get<Q extends Query<DB, keyof DB>>(
     { query }: { query: Q },
-    reqOptions?: T extends 'axios'
+    reqOptions?: Client extends 'axios'
       ? AxiosRequestConfig
-      : T extends 'fetch'
+      : Client extends 'fetch'
         ? RequestInit
         : never,
   ): Promise<QueryResponseGet<Q>> {
