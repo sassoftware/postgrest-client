@@ -141,7 +141,7 @@ describe.each([
   });
 });
 
-describe('reqOptions', () => {
+describe('request options (reqOptions)', () => {
   const NON_EXISTING_ID = 999999999;
 
   describe.each([
@@ -179,8 +179,11 @@ describe('reqOptions', () => {
 
     it('rejects axios-specific options at compile time', () => {
       const query = pgClient.query('competitions').eq('id', NON_EXISTING_ID);
-      // @ts-expect-error responseType is an Axios option, not a valid RequestInit property
-      pgClient.delete({ query }, { responseType: 'json' });
+      pgClient.delete(
+        { query },
+        // @ts-expect-error responseType is an Axios option, not a valid RequestInit property
+        { responseType: 'json' },
+      );
     });
 
     it('headers object', async () => {

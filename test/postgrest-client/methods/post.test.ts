@@ -135,7 +135,7 @@ describe.each([
 
     it('invalid column', async () => {
       const query = pgClient
-        .query('foo')
+        .query('actors')
         // @ts-expect-error testing an error
         .select('invalid')
         .returning('representation');
@@ -149,7 +149,7 @@ describe.each([
     });
 
     it('invalid payload', async () => {
-      const query = pgClient.query('foo');
+      const query = pgClient.query('actors');
       await expect(() =>
         // @ts-expect-error testing an error
         pgClient.post({ query, data: [{ invalid: 'invalid' }] }),
@@ -164,7 +164,7 @@ describe.each([
     });
 
     it('invalid payload (representation)', async () => {
-      const query = pgClient.query('foo').returning('representation');
+      const query = pgClient.query('actors').returning('representation');
       await expect(() =>
         // @ts-expect-error testing an error
         pgClient.post({ query, data: [{ invalid: 'invalid' }] }),
@@ -317,7 +317,7 @@ describe.each([
   });
 });
 
-describe('reqOptions', () => {
+describe('request options (reqOptions)', () => {
   // the update object has all the same values as original.
   const data = { bar: 'Added' };
 

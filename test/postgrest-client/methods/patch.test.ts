@@ -175,7 +175,7 @@ describe.each([
   });
 });
 
-describe('reqOptions', () => {
+describe('request options (reqOptions)', () => {
   describe.each([
     ['fetch', undefined],
     ['axios', axios.create()],

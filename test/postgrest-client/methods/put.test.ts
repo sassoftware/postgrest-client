@@ -77,7 +77,7 @@ describe.each([
   });
 });
 
-describe('reqOptions', () => {
+describe('request options (reqOptions)', () => {
   const data = { id: 1, name: 'Cannes Film Festival', year: 2023 };
 
   describe.each([

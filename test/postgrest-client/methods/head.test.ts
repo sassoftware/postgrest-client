@@ -51,7 +51,7 @@ describe.each([
   });
 });
 
-describe('reqOptions', () => {
+describe('request options (reqOptions)', () => {
   describe.each([
     ['fetch', undefined],
     ['axios', axios.create()],
@@ -84,8 +84,11 @@ describe('reqOptions', () => {
 
     it('rejects axios-specific options at compile time', () => {
       const query = pgClient.query('actors');
-      // @ts-expect-error responseType is an Axios option, not a valid RequestInit property
-      pgClient.head({ query }, { responseType: 'json' });
+      pgClient.head(
+        { query },
+        // @ts-expect-error responseType is an Axios option, not a valid RequestInit property
+        { responseType: 'json' },
+      );
     });
 
     it('headers object', async () => {
