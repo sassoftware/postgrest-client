@@ -11,11 +11,16 @@ describe.each([
   ['axios unencoded', axios.create(), false],
   ['axios encoded', axios.create(), true],
 ])('%s', (_name, axiosInstance, encodeQueryStrings) => {
-  const pgClient = new PostgrestClient<DB>({
-    base: BASE_URL,
-    axiosInstance,
-    encodeQueryStrings,
-  });
+  const pgClient = axiosInstance
+    ? new PostgrestClient<DB, 'axios'>({
+        base: BASE_URL,
+        axiosInstance,
+        encodeQueryStrings,
+      })
+    : new PostgrestClient<DB>({
+        base: BASE_URL,
+        encodeQueryStrings,
+      });
 
   const query = pgClient
     .query('directors')

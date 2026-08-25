@@ -3,7 +3,7 @@ Copyright © 2023, SAS Institute Inc., Cary, NC, USA.  All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-import { AxiosInstance, AxiosError } from 'axios';
+import { AxiosInstance, AxiosError, type AxiosRequestConfig } from 'axios';
 
 import { Query, type QueryDataObject } from './query';
 import type {
@@ -81,7 +81,7 @@ export type QueryResponseDelete<Q extends Query<any, any>> =
 const isAxiosError = (err: unknown): err is AxiosError =>
   (err as AxiosError).isAxiosError === true;
 
-type PostgrestClientConfig = {
+type PostgrestClientConfigBase = {
   /**
    * Absolute base URL.
    * It could be path only or a URL with domain
@@ -92,10 +92,6 @@ type PostgrestClientConfig = {
    * base: 'https://example.com/api'
    */
   base: string;
-  axiosInstance?: Pick<
-    AxiosInstance,
-    'get' | 'head' | 'post' | 'patch' | 'put' | 'delete'
-  >;
   /**
    * Sets URL encoding to enabled/disabled.
    * Disabling encoding could help with debugging and provide better readability.
@@ -105,21 +101,35 @@ type PostgrestClientConfig = {
   encodeQueryStrings?: boolean;
 };
 
+type PostgrestClientConfig = PostgrestClientConfigBase & {
+  axiosInstance?: never;
+};
+
+type PostgrestClientConfigAxios = PostgrestClientConfigBase & {
+  axiosInstance: AxiosInstance;
+};
+
 /**
  * Type-safe PostgREST client.
  */
-export class PostgrestClient<DB extends BaseDB | never> {
-  #base: PostgrestClientConfig['base'];
-  #encodeQueryStrings: PostgrestClientConfig['encodeQueryStrings'];
-  #axiosInstance?: PostgrestClientConfig['axiosInstance'];
+export class PostgrestClient<
+  DB extends BaseDB | never,
+  Client extends 'axios' | 'fetch' = 'fetch',
+> {
+  #base: PostgrestClientConfigBase['base'];
+  #encodeQueryStrings: PostgrestClientConfigBase['encodeQueryStrings'];
+  #axiosInstance?: AxiosInstance;
 
-  constructor({
-    base,
-    axiosInstance,
-    encodeQueryStrings,
-  }: PostgrestClientConfig) {
+  constructor(
+    config: Client extends 'axios'
+      ? PostgrestClientConfigAxios
+      : Client extends 'fetch'
+        ? PostgrestClientConfig
+        : never,
+  ) {
+    const { base, axiosInstance, encodeQueryStrings } = config;
     /* c8 ignore next 3 */
-    if (!this.#axiosInstance && typeof fetch !== 'function') {
+    if (!axiosInstance && typeof fetch !== 'function') {
       throw new Error('Neither Axios is provided nor "fetch" is available!');
     }
 
@@ -286,16 +296,26 @@ export class PostgrestClient<DB extends BaseDB | never> {
       resolution,
       missing,
     }: QueryDataObject<DB, keyof DB>,
-    requestHeadersArg?: Headers,
+    requestHeadersArg?: HeadersInit | AxiosRequestConfig['headers'],
   ): Headers {
     const headers = new Headers({
       Accept: 'application/json',
       'Content-Type': 'application/json',
     });
 
-    requestHeadersArg?.forEach((value, key) => {
-      headers.append(key, value);
-    });
+    if (requestHeadersArg instanceof Headers) {
+      requestHeadersArg.forEach((value, key) => {
+        headers.append(key, value);
+      });
+    } else if (Array.isArray(requestHeadersArg)) {
+      requestHeadersArg.forEach(([key, value]) => {
+        headers.append(key, value);
+      });
+    } else if (requestHeadersArg) {
+      Object.entries(requestHeadersArg).forEach(([key, value]) => {
+        headers.append(key, value);
+      });
+    }
 
     if (cardinality === 'one') {
       headers.set('Accept', 'application/vnd.pgrst.object+json');
@@ -331,21 +351,29 @@ export class PostgrestClient<DB extends BaseDB | never> {
   async #mutate<
     Q extends Query<DB, keyof DB>,
     Method extends Extract<HttpMethod, 'POST' | 'PATCH' | 'PUT'>,
-  >({
-    method,
-    query,
-    data: requestData,
-    headers: requestHeadersArg,
-  }: {
-    method: Method;
-    query: Q;
-    data: unknown;
-    headers?: Headers;
-  }) {
+  >(
+    {
+      method,
+      query,
+      data: requestData,
+    }: {
+      method: Method;
+      query: Q;
+      data: unknown;
+    },
+    reqOptions?: Client extends 'axios'
+      ? AxiosRequestConfig
+      : Client extends 'fetch'
+        ? RequestInit
+        : never,
+  ) {
     const queryObj = query.toObject();
     const { tableName, cardinality, returning } = queryObj;
     const url = this.#getRequestUrl(tableName, query);
-    const requestHeaders = this.#getRequestHeaders(queryObj, requestHeadersArg);
+    const requestHeaders = this.#getRequestHeaders(
+      queryObj,
+      reqOptions?.headers,
+    );
 
     if (this.#axiosInstance) {
       try {
@@ -357,6 +385,7 @@ export class PostgrestClient<DB extends BaseDB | never> {
         } = await this.#axiosInstance[
           method.toLowerCase() as Lowercase<Method>
         ](url, requestData, {
+          ...(reqOptions as AxiosRequestConfig),
           headers: Object.fromEntries(requestHeaders),
         });
 
@@ -410,6 +439,7 @@ export class PostgrestClient<DB extends BaseDB | never> {
     }
 
     const fetchResponse = await fetch(url, {
+      ...(reqOptions as RequestInit),
       method,
       headers: requestHeaders,
       body: JSON.stringify(requestData),
@@ -477,17 +507,21 @@ export class PostgrestClient<DB extends BaseDB | never> {
    * const { status, statusText, headers, row } = await pgClient.delete({ query });
    * ```
    */
-  async get<Q extends Query<DB, keyof DB>>({
-    query,
-    headers: requestHeadersArg,
-  }: {
-    query: Q;
-    headers?: Headers;
-  }): Promise<QueryResponseGet<Q>> {
+  async get<Q extends Query<DB, keyof DB>>(
+    { query }: { query: Q },
+    reqOptions?: Client extends 'axios'
+      ? AxiosRequestConfig
+      : Client extends 'fetch'
+        ? RequestInit
+        : never,
+  ): Promise<QueryResponseGet<Q>> {
     const queryObj = query.toObject();
     const { tableName, cardinality } = queryObj;
     const url = this.#getRequestUrl(tableName, query);
-    const requestHeaders = this.#getRequestHeaders(queryObj, requestHeadersArg);
+    const requestHeaders = this.#getRequestHeaders(
+      queryObj,
+      reqOptions?.headers,
+    );
 
     if (this.#axiosInstance) {
       try {
@@ -497,6 +531,7 @@ export class PostgrestClient<DB extends BaseDB | never> {
           status,
           statusText,
         } = await this.#axiosInstance.get(url, {
+          ...(reqOptions as AxiosRequestConfig),
           headers: Object.fromEntries(requestHeaders),
         });
 
@@ -544,7 +579,10 @@ export class PostgrestClient<DB extends BaseDB | never> {
       }
     }
 
-    const fetchResponse = await fetch(url, { headers: requestHeaders });
+    const fetchResponse = await fetch(url, {
+      ...(reqOptions as RequestInit),
+      headers: requestHeaders,
+    });
     const data = await fetchResponse.json();
     const { headers, status, statusText, ok } = fetchResponse;
     const response = this.#transformResponse({
@@ -593,13 +631,14 @@ export class PostgrestClient<DB extends BaseDB | never> {
    * } = await pgClient.head({ query });
    * ```
    */
-  async head<Q extends Query<DB, keyof DB>>({
-    query,
-    headers: requestHeadersArg,
-  }: {
-    query: Q;
-    headers?: Headers;
-  }): Promise<
+  async head<Q extends Query<DB, keyof DB>>(
+    { query }: { query: Q },
+    reqOptions?: Client extends 'axios'
+      ? AxiosRequestConfig
+      : Client extends 'fetch'
+        ? RequestInit
+        : never,
+  ): Promise<
     CountMetadata<'HEAD', Q> & {
       headers: Headers;
       status: number;
@@ -609,7 +648,10 @@ export class PostgrestClient<DB extends BaseDB | never> {
     const queryObj = query.toObject();
     const { tableName } = queryObj;
     const url = this.#getRequestUrl(tableName, query);
-    const requestHeaders = this.#getRequestHeaders(queryObj, requestHeadersArg);
+    const requestHeaders = this.#getRequestHeaders(
+      queryObj,
+      reqOptions?.headers,
+    );
 
     if (this.#axiosInstance) {
       try {
@@ -618,6 +660,7 @@ export class PostgrestClient<DB extends BaseDB | never> {
           status,
           statusText,
         } = await this.#axiosInstance.head(url, {
+          ...(reqOptions as AxiosRequestConfig),
           headers: Object.fromEntries(requestHeaders),
         });
 
@@ -649,6 +692,7 @@ export class PostgrestClient<DB extends BaseDB | never> {
     }
 
     const { headers, status, statusText, ok } = await fetch(url, {
+      ...(reqOptions as RequestInit),
       method: 'HEAD',
       headers: requestHeaders,
     });
@@ -715,16 +759,21 @@ export class PostgrestClient<DB extends BaseDB | never> {
    * });
    * ```
    */
-  async post<Q extends Query<DB, keyof DB>>({
-    query,
-    data,
-    headers,
-  }: {
-    query: Q;
-    data: PostRequestData<Q>;
-    headers?: Headers;
-  }): Promise<QueryResponsePost<Q>> {
-    return this.#mutate({ method: 'POST', query, data, headers });
+  async post<Q extends Query<DB, keyof DB>>(
+    {
+      query,
+      data,
+    }: {
+      query: Q;
+      data: PostRequestData<Q>;
+    },
+    reqOptions?: Client extends 'axios'
+      ? AxiosRequestConfig
+      : Client extends 'fetch'
+        ? RequestInit
+        : never,
+  ): Promise<QueryResponsePost<Q>> {
+    return this.#mutate({ method: 'POST', query, data }, reqOptions);
   }
 
   /**
@@ -766,16 +815,21 @@ export class PostgrestClient<DB extends BaseDB | never> {
    * });
    * ```
    */
-  async patch<Q extends Query<DB, keyof DB>>({
-    query,
-    data,
-    headers,
-  }: {
-    query: Q;
-    data: PatchRequestData<Q>;
-    headers?: Headers;
-  }): Promise<QueryResponsePatch<Q>> {
-    return this.#mutate({ method: 'PATCH', query, data, headers });
+  async patch<Q extends Query<DB, keyof DB>>(
+    {
+      query,
+      data,
+    }: {
+      query: Q;
+      data: PatchRequestData<Q>;
+    },
+    reqOptions?: Client extends 'axios'
+      ? AxiosRequestConfig
+      : Client extends 'fetch'
+        ? RequestInit
+        : never,
+  ): Promise<QueryResponsePatch<Q>> {
+    return this.#mutate({ method: 'PATCH', query, data }, reqOptions);
   }
 
   /**
@@ -808,16 +862,21 @@ export class PostgrestClient<DB extends BaseDB | never> {
    * });
    * ```
    */
-  async put<Q extends Query<DB, keyof DB>>({
-    query,
-    data,
-    headers,
-  }: {
-    query: Q;
-    data: PutRequestData<Q>;
-    headers?: Headers;
-  }): Promise<QueryResponsePut<Q>> {
-    return this.#mutate({ method: 'PUT', query, data, headers });
+  async put<Q extends Query<DB, keyof DB>>(
+    {
+      query,
+      data,
+    }: {
+      query: Q;
+      data: PutRequestData<Q>;
+    },
+    reqOptions?: Client extends 'axios'
+      ? AxiosRequestConfig
+      : Client extends 'fetch'
+        ? RequestInit
+        : never,
+  ): Promise<QueryResponsePut<Q>> {
+    return this.#mutate({ method: 'PUT', query, data }, reqOptions);
   }
 
   /**
@@ -837,17 +896,21 @@ export class PostgrestClient<DB extends BaseDB | never> {
    * const { status, statusText, headers, totalLength } = await pgClient.delete({ query });
    * ```
    */
-  async delete<Q extends Query<DB, keyof DB>>({
-    query,
-    headers: requestHeadersArg,
-  }: {
-    query: Q;
-    headers?: Headers;
-  }): Promise<QueryResponseDelete<Q>> {
+  async delete<Q extends Query<DB, keyof DB>>(
+    { query }: { query: Q },
+    reqOptions?: Client extends 'axios'
+      ? AxiosRequestConfig
+      : Client extends 'fetch'
+        ? RequestInit
+        : never,
+  ): Promise<QueryResponseDelete<Q>> {
     const queryObj = query.toObject();
     const { tableName, cardinality, returning } = queryObj;
     const url = this.#getRequestUrl(tableName, query);
-    const requestHeaders = this.#getRequestHeaders(queryObj, requestHeadersArg);
+    const requestHeaders = this.#getRequestHeaders(
+      queryObj,
+      reqOptions?.headers,
+    );
 
     if (this.#axiosInstance) {
       try {
@@ -857,6 +920,7 @@ export class PostgrestClient<DB extends BaseDB | never> {
           statusText,
           data,
         } = await this.#axiosInstance.delete(url, {
+          ...(reqOptions as AxiosRequestConfig),
           headers: Object.fromEntries(requestHeaders),
         });
 
@@ -904,6 +968,7 @@ export class PostgrestClient<DB extends BaseDB | never> {
     }
 
     const fetchResponse = await fetch(url, {
+      ...(reqOptions as RequestInit),
       method: 'DELETE',
       headers: requestHeaders,
     });
@@ -944,6 +1009,13 @@ export class PostgrestClient<DB extends BaseDB | never> {
  * @param config The same config object as accepted by PostgrestClient constructor.
  * @returns instance of PostgrestClient class
  */
-export const createClient = <DB extends BaseDB>(
-  config: PostgrestClientConfig,
-) => new PostgrestClient<DB>(config);
+export const createClient = <
+  DB extends BaseDB,
+  T extends 'axios' | 'fetch' = 'fetch',
+>(
+  config: T extends 'axios'
+    ? PostgrestClientConfigAxios
+    : T extends 'fetch'
+      ? PostgrestClientConfig
+      : never,
+) => new PostgrestClient<DB, T>(config);

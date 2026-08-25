@@ -102,9 +102,20 @@ type DB = {
 const pgClient = new PostgrestClient<DB>({
   // URL (https://example.com/some-api) or URL path on the same origin
   base: '/api',
-  // optional axios instance. Otherwise builtin `fetch` will be used
-  axiosInstance: axios.create(),
   // optional flag to disable params encoding
+  encodeQueryStrings: false,
+});
+```
+
+or in case Axios is used for fetching data:
+
+```ts
+const pgClient = new PostgrestClient<DB, 'axios'>({
+  base: '/api',
+  // note that both `axiosInstance` property,
+  // and 'axios' class generic should be added.
+  // The reason is to avoid mixing axios and fetch options in .get, .post, etc.
+  axiosInstance: axios.create(),
   encodeQueryStrings: false,
 });
 ```
