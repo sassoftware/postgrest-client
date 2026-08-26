@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## [v0.8.0](https://github.com/sassoftware/postgrest-client/releases/tag/v0.8.0) 2026-08-26
+
+- [dd45fc4](https://github.com/sassoftware/postgrest-client/commit/dd45fc44c8d7f41db8d7f297e10830f19f02a428) feat!: support for request options ([#36](https://github.com/sassoftware/postgrest-client/pull/36))
+
 ## [v0.7.1](https://github.com/sassoftware/postgrest-client/releases/tag/v0.7.1) 2024-09-27
 
 - [fae09a8](https://github.com/sassoftware/postgrest-client/commit/fae09a87782db1fe2cfd9211123842aab686d11b) fix: edge cases for nullable json types ([#26](https://github.com/sassoftware/postgrest-client/issues/26))
