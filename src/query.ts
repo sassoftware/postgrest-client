@@ -49,16 +49,16 @@ type FilterItemTupleArray<
 > = [Column, (string | number)[], IsNegated];
 
 type ObjPaths<T> = T extends EmptyObject
-  ? never
+  ? string
   : T extends object
     ? {
         [K in keyof T]: K extends string
           ? T[K] extends object
             ? `${K}.${ObjPaths<T[K]>}` | `${K}->${ObjPaths<T[K]>}`
             : K
-          : never;
+          : string;
       }[keyof T]
-    : never;
+    : string;
 
 type Order<QO extends object> = {
   column: ObjPaths<QO>;
