@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## [v1.0.0](https://github.com/sassoftware/postgrest-client/releases/tag/v1.0.0) 2026-11-26
+
+PostgREST Client is considered stable now. It's been used for some time, and it fulfills most of our needs. We are not planning to introduce any breaking changes in the near future. RPC/Functions support might be added in the near future to avoid having to call that with another library.
+
+- [f151af2](https://github.com/sassoftware/postgrest-client/commit/f151af211a6fc9df7dd445e83c9c8c5d33aef504) fix: removed trailing ? when query string is empty ([#38](https://github.com/sassoftware/postgrest-client/pull/38))
+
 ## [v0.8.0](https://github.com/sassoftware/postgrest-client/releases/tag/v0.8.0) 2026-08-26
 
 - [dd45fc4](https://github.com/sassoftware/postgrest-client/commit/dd45fc44c8d7f41db8d7f297e10830f19f02a428) feat!: support for request options ([#36](https://github.com/sassoftware/postgrest-client/pull/36))
