@@ -42,6 +42,16 @@ describe('instance configs', () => {
     expect(rows).toHaveLength(3);
   });
 
+  it('get without any filters', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch');
+
+    const pgClient = new PostgrestClient<DB>({ base: 'http://server:9000' });
+    const query = pgClient.query('actors');
+    await pgClient.get({ query });
+
+    expect(fetchSpy.mock.calls[0][0]).toEqual('http://server:9000/actors');
+  });
+
   it('encodeQueryStrings default setting', async () => {
     const fetchSpy = vi.spyOn(global, 'fetch');
 

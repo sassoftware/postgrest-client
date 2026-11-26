@@ -283,9 +283,14 @@ export class PostgrestClient<
   }
 
   #getRequestUrl(tableName: string, query: Query<DB, keyof DB>): string {
-    return `${this.#base}${
-      this.#base.endsWith('/') ? '' : '/'
-    }${tableName}?${query.toString({ encoded: this.#encodeQueryStrings })}`;
+    const queryString = query.toString({ encoded: this.#encodeQueryStrings });
+    return [
+      this.#base,
+      this.#base.endsWith('/') ? '' : '/',
+      tableName,
+      queryString ? '?' : '',
+      queryString,
+    ].join('');
   }
 
   #getRequestHeaders(
