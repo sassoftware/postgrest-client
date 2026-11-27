@@ -35,6 +35,7 @@
     "format:check": "prettier --check .",
     "circular-deps": "npx dpdm --transform --exit-code circular:1 --no-warning --no-tree src/postgrest-client.ts",
     "typecheck": "npx tsc --noEmit --project tsconfig.test.json",
+    "changelog-gen": "npx conventional-changelog --preset conventionalcommits",
     "prepare": "husky",
     "prepack": "npm ci; npm run build"
   },
@@ -43,6 +44,8 @@
     "@typescript-eslint/parser": "^6.1.0",
     "@vitest/coverage-v8": "^1.1.3",
     "axios": "^1.5.1",
+    "conventional-changelog": "^8.1.3",
+    "conventional-changelog-conventionalcommits": "^10.4.1",
     "dpdm": "^3.13.1",
     "dts-bundle-generator": "^9.2.1",
     "eslint": "^8.32.0",
